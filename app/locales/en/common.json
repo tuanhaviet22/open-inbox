@@ -1,0 +1,33 @@
+{
+  "language": "Language",
+  "errors": {
+    "generic": {
+      "title": "Something went wrong",
+      "description": "An unexpected error occurred. Please try again."
+    },
+    "notFound": {
+      "title": "Page not found",
+      "description": "The page you're looking for doesn't exist or has been moved."
+    },
+    "status": "Error {{status}}",
+    "goHome": "Go Home"
+  },
+  "folders": {
+    "inbox": "Inbox",
+    "sent": "Sent",
+    "draft": "Drafts",
+    "archive": "Archive",
+    "trash": "Trash",
+    "spam": "Spam"
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "close": "Close",
+    "send": "Send",
+    "back": "Back",
+    "retry": "Retry",
+    "loading": "Loading…"
+  }
+}

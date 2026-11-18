@@ -12,8 +12,10 @@ import {
 } from "@cloudflare/kumo";
 import { WarningIcon } from "@phosphor-icons/react";
 import { MutationCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { forwardRef, useState } from "react";
+import { forwardRef, useMemo, useState } from "react";
+import { I18nextProvider, useTranslation } from "react-i18next";
 import {
+	type LoaderFunctionArgs,
 	isRouteErrorResponse,
 	Links,
 	Meta,
@@ -21,9 +23,17 @@ import {
 	Link as RouterLink,
 	Scripts,
 	ScrollRestoration,
+	useRouteLoaderData,
 } from "react-router";
+import { DEFAULT_LOCALE, type Locale, resolveLocale } from "shared/locales";
+import { createI18n } from "~/i18n";
 import { ApiError } from "~/services/api";
 import "./index.css";
+
+export function loader({ request }: LoaderFunctionArgs) {
+	const locale = resolveLocale(request.headers.get("cookie"), request.headers.get("accept-language"));
+	return { locale };
+}
 
 function makeQueryClient() {
 	return new QueryClient({
@@ -76,8 +86,12 @@ const KumoLink = forwardRef<
 });
 
 export function Layout({ children }: { children: React.ReactNode }) {
+	// Loader data is missing when the root loader itself failed.
+	const data = useRouteLoaderData("root") as { locale: Locale } | undefined;
+	const locale = data?.locale ?? DEFAULT_LOCALE;
+	const i18n = useMemo(() => createI18n(locale), [locale]);
 	return (
-		<html lang="en">
+		<html lang={locale}>
 			<head>
 				<meta charSet="UTF-8" />
 				<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -93,7 +107,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 				<Links />
 			</head>
 			<body className="bg-kumo-recessed text-kumo-default antialiased">
-				{children}
+				<I18nextProvider i18n={i18n}>{children}</I18nextProvider>
 				<ScrollRestoration />
 				<Scripts />
 			</body>
@@ -127,18 +141,18 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: { error: unknown }) {
-	let title = "Something went wrong";
-	let description = "An unexpected error occurred. Please try again.";
+	const { t } = useTranslation();
+	let title = t("errors.generic.title");
+	let description = t("errors.generic.description");
 	let status: number | null = null;
 
 	if (isRouteErrorResponse(error)) {
 		status = error.status;
 		if (error.status === 404) {
-			title = "Page not found";
-			description =
-				"The page you're looking for doesn't exist or has been moved.";
+			title = t("errors.notFound.title");
+			description = t("errors.notFound.description");
 		} else {
-			title = `Error ${error.status}`;
+			title = t("errors.status", { status: error.status });
 			description = error.statusText || description;
 		}
 	} else if (error instanceof Error && import.meta.env.DEV) {
@@ -149,7 +163,7 @@ export function ErrorBoundary({ error }: { error: unknown }) {
 		<div className="flex items-center justify-center min-h-screen p-8">
 			<Empty
 				icon={<WarningIcon size={48} className="text-kumo-inactive" />}
-				title={status === 404 ? "404 — Page not found" : title}
+				title={status === 404 ? `404 — ${title}` : title}
 				description={description}
 				contents={
 					<Button
@@ -158,7 +172,7 @@ export function ErrorBoundary({ error }: { error: unknown }) {
 							window.location.href = "/";
 						}}
 					>
-						Go Home
+						{t("errors.goHome")}
 					</Button>
 				}
 			/>

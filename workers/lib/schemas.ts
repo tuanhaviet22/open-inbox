@@ -11,6 +11,7 @@
  * Zod schemas: used across route handlers to eliminate duplication.
  */
 import { z } from "zod";
+import { SUPPORTED_LOCALES } from "../../shared/locales";
 
 // ── TypeScript Interfaces ──────────────────────────────────────────
 
@@ -107,6 +108,8 @@ export const MailboxSettingsSchema = z
 			.object({ enabled: z.boolean(), subject: z.string().max(500), message: z.string().max(10_000) })
 			.optional(),
 		agentSystemPrompt: z.string().max(10_000).optional(),
+		/** Language of text added to outgoing mail (quote headers etc.). */
+		locale: z.enum(SUPPORTED_LOCALES).optional(),
 	});
 
 export const CreateMailboxBodySchema = z.object({

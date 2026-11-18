@@ -3,11 +3,13 @@
 //     https://opensource.org/licenses/Apache-2.0
 
 import { useKumoToastManager } from "@cloudflare/kumo";
+import { useTranslation } from "react-i18next";
+import { formatQuotedDate } from "shared/dates";
+import { getMailStrings } from "shared/mail-strings";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
 	buildQuotedReplyBlock,
 	escapeHtml,
-	formatComposeDate,
 	getSignatureBlock,
 	htmlToPlainText,
 	splitEmailList,
@@ -62,12 +64,14 @@ function getPrefixedSubject(subject: string, prefix: "Re" | "Fwd") {
 function buildForwardBody(
 	original: NonNullable<ReturnType<typeof useUIStore.getState>["composeOptions"]["originalEmail"]>,
 	sigBlock: string,
+	locale: string,
 ) {
+	const mail = getMailStrings(locale);
 	const safeSender = escapeHtml(original.sender);
 	const safeSubject = escapeHtml(original.subject);
 	const safeBody = escapeHtml(stripHtml(original.body || "")).replace(/\n/g, "<br>");
 
-	return `<p><br></p>${sigBlock ? `${sigBlock}<br>` : ""}<div style="border: 1px solid #ddd; padding: 1em; background-color: #f9f9f9; margin: 1em 0;"><strong>Forwarded message:</strong><br><strong>From:</strong> ${safeSender}<br><strong>Date:</strong> ${formatComposeDate(original.date)}<br><strong>Subject:</strong> ${safeSubject}<br><br>${safeBody}</div>`;
+	return `<p><br></p>${sigBlock ? `${sigBlock}<br>` : ""}<div style="border: 1px solid #ddd; padding: 1em; background-color: #f9f9f9; margin: 1em 0;"><strong>${mail.forwardedLabel}</strong><br><strong>${mail.fromLabel}</strong> ${safeSender}<br><strong>${mail.dateLabel}</strong> ${formatQuotedDate(original.date, locale)}<br><strong>${mail.subjectLabel}</strong> ${safeSubject}<br><br>${safeBody}</div>`;
 }
 
 function buildReplyAllFields(
@@ -108,6 +112,7 @@ function buildInitialComposeFields(
 	composeOptions: ReturnType<typeof useUIStore.getState>["composeOptions"],
 	mailboxEmail: string | undefined,
 	sigBlock: string,
+	locale: string,
 ): ComposeFormFields {
 	const { draftEmail: draft, originalEmail: original, mode } = composeOptions;
 
@@ -134,7 +139,7 @@ function buildInitialComposeFields(
 			...EMPTY_FIELDS,
 			to: original.sender,
 			subject: getPrefixedSubject(original.subject, "Re"),
-			body: `<p><br></p>${sigBlock ? `${sigBlock}<br>` : ""}${buildQuotedReplyBlock(original.date, original.sender, original.body || "")}`,
+			body: `<p><br></p>${sigBlock ? `${sigBlock}<br>` : ""}${buildQuotedReplyBlock(original.date, original.sender, original.body || "", locale)}`,
 		};
 	}
 
@@ -144,7 +149,7 @@ function buildInitialComposeFields(
 			...EMPTY_FIELDS,
 			...recipients,
 			subject: getPrefixedSubject(original.subject, "Re"),
-			body: `<p><br></p>${sigBlock ? `${sigBlock}<br>` : ""}${buildQuotedReplyBlock(original.date, original.sender, original.body || "")}`,
+			body: `<p><br></p>${sigBlock ? `${sigBlock}<br>` : ""}${buildQuotedReplyBlock(original.date, original.sender, original.body || "", locale)}`,
 		};
 	}
 
@@ -152,7 +157,7 @@ function buildInitialComposeFields(
 		return {
 			...EMPTY_FIELDS,
 			subject: getPrefixedSubject(original.subject, "Fwd"),
-			body: buildForwardBody(original, sigBlock),
+			body: buildForwardBody(original, sigBlock, locale),
 		};
 	}
 
@@ -166,6 +171,9 @@ export function useComposeForm(mailboxId?: string, _folder?: string) {
 	const toastManager = useKumoToastManager();
 	const { composeOptions, closePanel, closeCompose } = useUIStore();
 	const { data: currentMailbox } = useMailbox(mailboxId);
+	const { i18n } = useTranslation();
+	// Text added to outgoing mail follows the mailbox language, then the UI language.
+	const locale = currentMailbox?.settings?.locale ?? i18n.language;
 	const sendEmailMutation = useSendEmail();
 	const saveDraftMutation = useSaveDraft();
 	const replyMutation = useReplyToEmail();
@@ -199,6 +207,7 @@ export function useComposeForm(mailboxId?: string, _folder?: string) {
 			composeOptions,
 			currentMailbox?.email,
 			sigBlock,
+			locale,
 		);
 		setError(null);
 		setTo(initialFields.to);

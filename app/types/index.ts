@@ -14,6 +14,8 @@ export interface MailboxSettings {
 	signature?: SignatureSettings;
 	autoReply?: { enabled: boolean; subject: string; message: string };
 	agentSystemPrompt?: string;
+	/** Language of text added to outgoing mail; falls back to the UI language. */
+	locale?: string;
 }
 
 export interface Mailbox {

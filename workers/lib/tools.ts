@@ -49,6 +49,17 @@ export async function toolListMailboxes(env: Env) {
 	return listMailboxes(env.BUCKET);
 }
 
+/** Locale from the mailbox settings (R2), used for text that goes into outgoing mail. */
+export async function getMailboxLocale(env: Env, mailboxId: string): Promise<string | null> {
+	try {
+		const obj = await env.BUCKET.get(`mailboxes/${mailboxId}.json`);
+		const settings = obj ? ((await obj.json()) as { locale?: string }) : null;
+		return settings?.locale ?? null;
+	} catch {
+		return null;
+	}
+}
+
 // ── list_emails ────────────────────────────────────────────────────
 
 export async function toolListEmails(
@@ -160,6 +171,7 @@ export async function toolDraftReply(
 				date: original.date,
 				sender: original.sender || params.to,
 				body: original.body ?? undefined,
+				locale: await getMailboxLocale(env, mailboxId),
 			})
 		: "";
 	const bodyHtml = processedBody + quotedBlock;
@@ -430,6 +442,7 @@ export async function toolSendReply(
 		date: originalEmail.date,
 		sender: originalEmail.sender || params.to,
 		body: originalEmail.body ?? undefined,
+		locale: await getMailboxLocale(env, mailboxId),
 	});
 	const fullBodyHtml = sanitizedBody + quotedBlock;
 

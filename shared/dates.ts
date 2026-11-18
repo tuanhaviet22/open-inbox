@@ -2,6 +2,8 @@
 // Licensed under the Apache 2.0 license found in the LICENSE file or at:
 //     https://opensource.org/licenses/Apache-2.0
 
+import { matchLocale } from "./locales";
+
 /**
  * Consolidated date formatting utilities.
  *
@@ -9,6 +11,11 @@
  * `workers/lib/html.ts` (`formatEmailDate`). Now one canonical set
  * imported by both the frontend and backend.
  */
+
+/** BCP-47 tag used for quoted dates; fixed per locale so output is deterministic. */
+function intlLocale(locale: string | null | undefined): string {
+	return matchLocale(locale) === "vi" ? "vi-VN" : "en-US";
+}
 
 /** Parse safely — returns null on invalid dates instead of NaN-date. */
 function safeParse(dateStr: string | undefined | null): Date | null {
@@ -89,18 +96,18 @@ export function formatShortDate(dateStr: string): string {
  * Uses explicit "en-US" locale for deterministic output on both browser
  * and Cloudflare Workers (which support `toLocaleString`).
  */
-export function formatQuotedDate(dateStr: string | undefined): string {
+export function formatQuotedDate(dateStr: string | undefined, locale?: string | null): string {
 	if (!dateStr) return "";
 	const date = safeParse(dateStr);
 	if (!date) return dateStr;
 
-	return date.toLocaleString("en-US", {
+	return date.toLocaleString(intlLocale(locale), {
 		weekday: "short",
 		month: "short",
 		day: "numeric",
 		year: "numeric",
 		hour: "numeric",
 		minute: "2-digit",
-		hour12: true,
+		hour12: matchLocale(locale) !== "vi",
 	});
 }
