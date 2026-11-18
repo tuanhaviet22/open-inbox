@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from "../../shared/locales";
+import FiltersCard from "~/components/FiltersCard";
+import LabelsCard from "~/components/LabelsCard";
 import MembersCard from "~/components/MembersCard";
 import { useMailbox, useUpdateMailbox } from "~/queries/mailboxes";
 import { useMe, useMembers } from "~/queries/members";
@@ -118,6 +120,9 @@ export default function SettingsRoute() {
 				</div>
 
 				{canManageMembers && <MembersCard mailboxId={mailboxId!} />}
+
+				<LabelsCard mailboxId={mailboxId!} />
+				<FiltersCard mailboxId={mailboxId!} />
 
 				{/* Agent System Prompt */}
 				<div className="rounded-lg border border-kumo-line bg-kumo-base p-5">

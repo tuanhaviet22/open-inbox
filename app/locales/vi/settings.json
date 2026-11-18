@@ -74,5 +74,38 @@
       "fillAll": "Vui lòng điền đầy đủ các trường",
       "createFailed": "Không thể tạo hộp thư"
     }
+  },
+  "labels": {
+    "title": "Nhãn",
+    "empty": "Chưa có nhãn nào.",
+    "name": "Nhãn mới",
+    "color": "Màu",
+    "add": "Thêm",
+    "delete": "Xóa nhãn {{name}}",
+    "error": "Không thể cập nhật nhãn"
+  },
+  "filters": {
+    "title": "Bộ lọc",
+    "description": "Quy tắc chạy với mọi thư đến mới. Tất cả điều kiện phải khớp.",
+    "name": "Tên quy tắc",
+    "fields": {
+      "from": "Người gửi chứa",
+      "to": "Người nhận chứa",
+      "subject": "Chủ đề chứa",
+      "contains": "Nội dung chứa"
+    },
+    "actions": {
+      "label": "Gắn nhãn",
+      "move": "Chuyển vào thư mục",
+      "markRead": "Đánh dấu đã đọc",
+      "star": "Gắn sao"
+    },
+    "none": "Không",
+    "add": "Thêm bộ lọc",
+    "enable": "Bật",
+    "disable": "Tắt",
+    "delete": "Xóa",
+    "incomplete": "Hãy đặt tên, ít nhất một điều kiện và một hành động.",
+    "error": "Không thể cập nhật bộ lọc"
   }
 }

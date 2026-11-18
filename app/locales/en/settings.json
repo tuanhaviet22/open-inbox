@@ -74,5 +74,38 @@
       "fillAll": "Please fill in all fields",
       "createFailed": "Failed to create mailbox"
     }
+  },
+  "labels": {
+    "title": "Labels",
+    "empty": "No labels yet.",
+    "name": "New label",
+    "color": "Color",
+    "add": "Add",
+    "delete": "Delete label {{name}}",
+    "error": "Could not update labels"
+  },
+  "filters": {
+    "title": "Filters",
+    "description": "Rules run on every new incoming email. All conditions must match.",
+    "name": "Rule name",
+    "fields": {
+      "from": "From contains",
+      "to": "To contains",
+      "subject": "Subject contains",
+      "contains": "Text contains"
+    },
+    "actions": {
+      "label": "Apply label",
+      "move": "Move to folder",
+      "markRead": "Mark as read",
+      "star": "Star"
+    },
+    "none": "None",
+    "add": "Add filter",
+    "enable": "Enable",
+    "disable": "Disable",
+    "delete": "Delete",
+    "incomplete": "Give the rule a name, at least one condition and one action.",
+    "error": "Could not update filters"
   }
 }

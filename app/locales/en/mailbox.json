@@ -115,6 +115,7 @@
       "sent": "Email sent!",
       "sendFailed": "Failed to send email."
     },
-    "noSubject": "(no subject)"
+    "noSubject": "(no subject)",
+    "labels": "Labels"
   }
 }

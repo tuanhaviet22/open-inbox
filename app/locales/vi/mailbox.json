@@ -115,6 +115,7 @@
       "sent": "Đã gửi thư!",
       "sendFailed": "Gửi thư thất bại."
     },
-    "noSubject": "(không có tiêu đề)"
+    "noSubject": "(không có tiêu đề)",
+    "labels": "Nhãn"
   }
 }
