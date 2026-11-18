@@ -120,6 +120,10 @@ To enable per-mailbox authorization, set `ADMIN_EMAILS` (comma-separated) in `wr
 
 Mail is sent through the Cloudflare `send_email` binding by default. To use another service, set `OUTBOUND_WEBHOOK_URL` (and optionally the `OUTBOUND_WEBHOOK_SECRET` secret): Open Inbox will POST each outgoing message as JSON (`to`, `from`, `subject`, `html`, `text`, `attachments`, ...) with `Authorization: Bearer <secret>` and expects a 2xx reply, optionally `{ "messageId": "..." }`. Workers cannot open raw SMTP/IMAP connections, so an HTTP relay you host (SMTP bridge, SES, Postmark, ...) is the supported way. Receiving is still done by Cloudflare Email Routing.
 
+## Signatures
+
+Each mailbox can have several signatures (Settings > Signatures), written in the rich text editor. The one marked as default is added to new messages, replies and forwards, and the composer toolbar lets you insert any other signature at the cursor. Mailboxes that had the older single signature keep it as their default.
+
 ## Labels and filters
 
 Each mailbox has labels (color-coded, toggled on an email from the reading pane) and filter rules in Settings. A rule matches new incoming mail on sender, recipient, subject or text, and can add a label, move to a folder, mark as read or star. The agent auto-draft is skipped when a rule moves the mail out of the inbox.

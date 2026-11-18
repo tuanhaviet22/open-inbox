@@ -12,6 +12,7 @@
  */
 import { z } from "zod";
 import { SUPPORTED_LOCALES } from "../../shared/locales";
+import { MAX_SIGNATURES, validateSignatures } from "../../shared/signatures";
 import { MIN_PASSWORD_LENGTH } from "../auth/constants";
 
 // ── TypeScript Interfaces ──────────────────────────────────────────
@@ -102,9 +103,22 @@ export const MailboxSettingsSchema = z
 	.object({
 		fromName: z.string().max(200).optional(),
 		forwarding: z.object({ enabled: z.boolean(), email: z.string().max(320) }).optional(),
+		/** Legacy single signature; superseded by `signatures`. */
 		signature: z
 			.object({ enabled: z.boolean(), text: z.string().max(10_000), html: z.string().max(50_000).optional() })
 			.optional(),
+		signatures: z
+			.array(
+				z.object({
+					id: z.string().min(1).max(64),
+					name: z.string().trim().min(1).max(100),
+					text: z.string().max(10_000),
+					html: z.string().max(50_000).optional(),
+				}),
+			)
+			.max(MAX_SIGNATURES)
+			.optional(),
+		defaultSignatureId: z.string().max(64).optional(),
 		autoReply: z
 			.object({ enabled: z.boolean(), subject: z.string().max(500), message: z.string().max(10_000) })
 			.optional(),
@@ -126,7 +140,10 @@ export const SetMemberBodySchema = z.object({
 	role: z.enum(["owner", "member"]),
 });
 
-export const UpdateMailboxBodySchema = z.object({ settings: MailboxSettingsSchema });
+export const UpdateMailboxBodySchema = z.object({ settings: MailboxSettingsSchema }).superRefine((body, ctx) => {
+	const problem = validateSignatures(body.settings);
+	if (problem) ctx.addIssue({ code: "custom", path: ["settings", "signatures"], message: problem });
+});
 
 export const UpdateEmailBodySchema = z.object({
 	read: z.boolean().optional(),

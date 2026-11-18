@@ -51,6 +51,7 @@
     "horizontalRule": "Đường kẻ ngang",
     "undo": "Hoàn tác",
     "redo": "Làm lại",
-    "linkPrompt": "URL"
+    "linkPrompt": "URL",
+    "insertSignature": "Chèn chữ ký"
   }
 }

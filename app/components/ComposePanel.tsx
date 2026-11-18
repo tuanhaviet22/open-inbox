@@ -17,6 +17,7 @@ export default function ComposePanel() {
 	}>();
 
 	const {
+		signatures,
 		to,
 		setTo,
 		cc,
@@ -146,6 +147,7 @@ export default function ComposePanel() {
 						<RichTextEditor
 							value={body}
 							onChange={setBody}
+							signatures={signatures}
 						/>
 					</div>
 				</div>

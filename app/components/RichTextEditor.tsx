@@ -28,15 +28,20 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import type { Signature } from "shared/signatures";
+import { signatureToBlock } from "~/lib/utils";
 
 interface RichTextEditorProps {
 	value: string;
 	onChange: (value: string) => void;
+	/** When given, the toolbar offers "Insert signature". */
+	signatures?: Signature[];
 }
 
 export default function RichTextEditor({
 	value,
 	onChange,
+	signatures = [],
 }: RichTextEditorProps) {
 	const { t } = useTranslation("compose");
 	const editor = useEditor({
@@ -219,6 +224,27 @@ export default function RichTextEditor({
 						aria-label={t("editor.undo")}
 					/>
 				</Tooltip>
+				{signatures.length > 0 && (
+					<>
+						<div className="mx-1 h-5 w-px bg-kumo-fill" />
+						<select
+							aria-label={t("editor.insertSignature")}
+							value=""
+							onChange={(e) => {
+								const sig = signatures.find((s) => s.id === e.target.value);
+								if (sig) editor.chain().focus().insertContent(signatureToBlock(sig)).run();
+							}}
+							className="rounded-md border border-kumo-line bg-kumo-base px-2 py-1 text-xs text-kumo-default focus:outline-none focus:ring-1 focus:ring-kumo-ring"
+						>
+							<option value="">{t("editor.insertSignature")}</option>
+							{signatures.map((s) => (
+								<option key={s.id} value={s.id}>
+									{s.name}
+								</option>
+							))}
+						</select>
+					</>
+				)}
 				<Tooltip content={t("editor.redo")} side="bottom" asChild>
 					<Button
 						variant="ghost"

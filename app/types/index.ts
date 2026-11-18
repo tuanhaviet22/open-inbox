@@ -1,3 +1,4 @@
+import type { Signature } from "shared/signatures";
 // Copyright (c) 2026 Cloudflare, Inc.
 // Licensed under the Apache 2.0 license found in the LICENSE file or at:
 //     https://opensource.org/licenses/Apache-2.0
@@ -12,6 +13,8 @@ export interface MailboxSettings {
 	fromName?: string;
 	forwarding?: { enabled: boolean; email: string };
 	signature?: SignatureSettings;
+	signatures?: Signature[];
+	defaultSignatureId?: string;
 	autoReply?: { enabled: boolean; subject: string; message: string };
 	agentSystemPrompt?: string;
 	/** Language of text added to outgoing mail; falls back to the UI language. */

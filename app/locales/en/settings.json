@@ -107,5 +107,25 @@
     "delete": "Delete",
     "incomplete": "Give the rule a name, at least one condition and one action.",
     "error": "Could not update filters"
+  },
+  "signatures": {
+    "title": "Signatures",
+    "description": "Create several signatures. The default one is added to new messages, replies and forwards; in the composer you can insert any of them from the toolbar.",
+    "empty": "No signatures yet.",
+    "default": "Default",
+    "setDefault": "Make default",
+    "clearDefault": "Remove default",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirmDelete": "Delete the signature “{{name}}”?",
+    "add": "Add signature",
+    "name": "Signature name",
+    "save": "Save signature",
+    "saveFailed": "Could not save the signature",
+    "errors": {
+      "nameRequired": "Give the signature a name.",
+      "nameTaken": "Another signature already uses this name.",
+      "contentRequired": "The signature is empty."
+    }
   }
 }

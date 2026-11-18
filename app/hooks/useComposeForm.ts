@@ -6,6 +6,7 @@ import { useKumoToastManager } from "@cloudflare/kumo";
 import { useTranslation } from "react-i18next";
 import { formatQuotedDate } from "shared/dates";
 import { getMailStrings } from "shared/mail-strings";
+import { listSignatures } from "shared/signatures";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
 	buildQuotedReplyBlock,
@@ -272,5 +273,7 @@ export function useComposeForm(mailboxId?: string, _folder?: string) {
 		finally { setIsSending(false); }
 	};
 
-	return { to, setTo, cc, setCc, bcc, setBcc, showCcBcc, setShowCcBcc, subject, setSubject, body, setBody, error, setError, isSavingDraft, isSending, formTitle, handleSaveDraft, handleSend, closeCompose, closePanel };
+	const signatures = useMemo(() => listSignatures(currentMailbox?.settings), [currentMailbox]);
+
+	return { signatures, to, setTo, cc, setCc, bcc, setBcc, showCcBcc, setShowCcBcc, subject, setSubject, body, setBody, error, setError, isSavingDraft, isSending, formTitle, handleSaveDraft, handleSend, closeCompose, closePanel };
 }

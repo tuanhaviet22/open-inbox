@@ -51,6 +51,7 @@
     "horizontalRule": "Horizontal rule",
     "undo": "Undo",
     "redo": "Redo",
-    "linkPrompt": "URL"
+    "linkPrompt": "URL",
+    "insertSignature": "Insert signature"
   }
 }
