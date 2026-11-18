@@ -560,6 +560,23 @@ export class MailboxDO extends DurableObject<Env> {
 		return emailAttachments;
 	}
 
+	/**
+	 * Wipe all data in this mailbox. Returns the R2 keys of every attachment
+	 * so the caller can delete the blobs.
+	 */
+	async purgeAll(): Promise<string[]> {
+		const rows = this.db
+			.select({
+				id: schema.attachments.id,
+				email_id: schema.attachments.email_id,
+				filename: schema.attachments.filename,
+			})
+			.from(schema.attachments)
+			.all();
+		await this.ctx.storage.deleteAll();
+		return rows.map((r) => `attachments/${r.email_id}/${r.id}/${r.filename}`);
+	}
+
 	async getAttachment(id: string) {
 		return (
 			this.db

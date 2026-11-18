@@ -18,10 +18,15 @@ export type MailboxContext = {
 	};
 };
 
+/** Canonical form of a mailbox id (an email address): trimmed and lowercased. */
+export function normalizeMailboxId(raw: string): string {
+	return raw.trim().toLowerCase();
+}
+
 export const requireMailbox = createMiddleware<MailboxContext>(async (c, next) => {
 	const rawId = c.req.param("mailboxId");
 	if (!rawId) return c.json({ error: "Mailbox ID required" }, 400);
-	const mailboxId = decodeURIComponent(rawId);
+	const mailboxId = normalizeMailboxId(decodeURIComponent(rawId));
 
 	// Verify mailbox exists
 	const key = `mailboxes/${mailboxId}.json`;

@@ -93,3 +93,35 @@ export const SendEmailResponseSchema = z.object({
 	id: z.string(),
 	status: z.string(),
 });
+
+// ── Request body schemas ───────────────────────────────────────────
+
+export const MailboxSettingsSchema = z
+	.object({
+		fromName: z.string().max(200).optional(),
+		forwarding: z.object({ enabled: z.boolean(), email: z.string().max(320) }).optional(),
+		signature: z
+			.object({ enabled: z.boolean(), text: z.string().max(10_000), html: z.string().max(50_000).optional() })
+			.optional(),
+		autoReply: z
+			.object({ enabled: z.boolean(), subject: z.string().max(500), message: z.string().max(10_000) })
+			.optional(),
+		agentSystemPrompt: z.string().max(10_000).optional(),
+	});
+
+export const CreateMailboxBodySchema = z.object({
+	email: z.string().email(),
+	name: z.string().min(1).max(200),
+	settings: MailboxSettingsSchema.partial().optional(),
+});
+
+export const UpdateMailboxBodySchema = z.object({ settings: MailboxSettingsSchema });
+
+export const UpdateEmailBodySchema = z.object({
+	read: z.boolean().optional(),
+	starred: z.boolean().optional(),
+});
+
+export const MoveEmailBodySchema = z.object({ folderId: z.string().min(1) });
+
+export const FolderNameBodySchema = z.object({ name: z.string().trim().min(1).max(100) });
