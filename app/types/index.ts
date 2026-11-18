@@ -64,3 +64,8 @@ export interface Folder {
 	name: string;
 	unreadCount: number;
 }
+
+export interface Member {
+	email: string;
+	role: "owner" | "member";
+}

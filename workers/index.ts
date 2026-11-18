@@ -15,8 +15,10 @@ import {
 	buildThreadingHeaders,
 	listMailboxes,
 } from "./lib/email-helpers";
+import { getAccessStub, getMailboxRole, hasRole, isAdmin, isAuthzEnabled, filterVisibleMailboxes } from "./lib/auth";
 import {
 	CreateMailboxBodySchema,
+	SetMemberBodySchema,
 	FolderNameBodySchema,
 	MoveEmailBodySchema,
 	SendEmailRequestSchema,
@@ -115,13 +117,23 @@ app.get("/api/v1/config", (c) => {
 
 // -- Mailboxes ------------------------------------------------------
 
+app.get("/api/v1/me", (c) => {
+	const email = c.get("userEmail") ?? "";
+	return c.json({ email, isAdmin: !isAuthzEnabled(c.env) || isAdmin(c.env, email), authzEnabled: isAuthzEnabled(c.env) });
+});
+
 app.get("/api/v1/mailboxes", async (c) => {
 	const allMailboxes = await listMailboxes(c.env.BUCKET);
-	return c.json(allMailboxes.map((m) => ({ ...m, name: m.id })));
+	const visible = await filterVisibleMailboxes(c.env, c.get("userEmail") ?? "", allMailboxes);
+	return c.json(visible.map((m) => ({ ...m, name: m.id })));
 });
 
 app.post("/api/v1/mailboxes", async (c) => {
-	const { name, settings, email: rawEmail } = CreateMailboxBodySchema.parse(await c.req.json());
+	const { name, settings, email: rawEmail, owner } = CreateMailboxBodySchema.parse(await c.req.json());
+	const userEmail = c.get("userEmail") ?? "";
+	if (isAuthzEnabled(c.env) && !isAdmin(c.env, userEmail)) {
+		return c.json({ error: "Only admins can create mailboxes" }, 403);
+	}
 	const email = normalizeMailboxId(rawEmail);
 	const allowedAddresses = (c.env.EMAIL_ADDRESSES ?? []) as string[];
 	if (allowedAddresses.length > 0 && !allowedAddresses.map((a) => a.toLowerCase()).includes(email)) {
@@ -134,11 +146,15 @@ app.post("/api/v1/mailboxes", async (c) => {
 	await c.env.BUCKET.put(key, JSON.stringify(finalSettings));
 	const stub = c.env.MAILBOX.get(c.env.MAILBOX.idFromName(email));
 	await stub.getFolders();
+	if (isAuthzEnabled(c.env)) {
+		await getAccessStub(c.env).setMember(email, normalizeMailboxId(owner ?? userEmail), "owner");
+	}
 	return c.json({ id: email, email, name, settings: finalSettings }, 201);
 });
 
 app.get("/api/v1/mailboxes/:mailboxId", async (c) => {
 	const mailboxId = normalizeMailboxId(c.req.param("mailboxId")!);
+	if (!hasRole(await getMailboxRole(c.env, mailboxId, c.get("userEmail") ?? ""), "member")) return c.json({ error: "Not found" }, 404);
 	const obj = await c.env.BUCKET.get(`mailboxes/${mailboxId}.json`);
 	if (!obj) return c.json({ error: "Not found" }, 404);
 	return c.json({ id: mailboxId, name: mailboxId, email: mailboxId, settings: await obj.json() });
@@ -146,6 +162,7 @@ app.get("/api/v1/mailboxes/:mailboxId", async (c) => {
 
 app.put("/api/v1/mailboxes/:mailboxId", async (c) => {
 	const mailboxId = normalizeMailboxId(c.req.param("mailboxId")!);
+	if (!hasRole(await getMailboxRole(c.env, mailboxId, c.get("userEmail") ?? ""), "owner")) return c.json({ error: "Not found" }, 404);
 	const { settings } = UpdateMailboxBodySchema.parse(await c.req.json());
 	const key = `mailboxes/${mailboxId}.json`;
 	if (!(await c.env.BUCKET.head(key))) return c.json({ error: "Not found" }, 404);
@@ -157,6 +174,7 @@ app.delete("/api/v1/mailboxes/:mailboxId", async (c) => {
 	const mailboxId = normalizeMailboxId(c.req.param("mailboxId")!);
 	const key = `mailboxes/${mailboxId}.json`;
 	if (!(await c.env.BUCKET.head(key))) return c.json({ error: "Not found" }, 404);
+	if (!hasRole(await getMailboxRole(c.env, mailboxId, c.get("userEmail") ?? ""), "owner")) return c.json({ error: "Not found" }, 404);
 	const stub = c.env.MAILBOX.get(c.env.MAILBOX.idFromName(mailboxId));
 	const attachmentKeys = await stub.purgeAll();
 	// R2 delete accepts at most 1000 keys per call.
@@ -164,6 +182,32 @@ app.delete("/api/v1/mailboxes/:mailboxId", async (c) => {
 		await c.env.BUCKET.delete(attachmentKeys.slice(i, i + 1000));
 	}
 	await c.env.BUCKET.delete(key);
+	await getAccessStub(c.env).deleteMailbox(mailboxId);
+	return c.body(null, 204);
+});
+
+// -- Members --------------------------------------------------------
+
+app.get("/api/v1/mailboxes/:mailboxId/members", async (c: AppContext) => {
+	const mailboxId = normalizeMailboxId(c.req.param("mailboxId")!);
+	return c.json(await getAccessStub(c.env).listMembers(mailboxId));
+});
+
+app.put("/api/v1/mailboxes/:mailboxId/members", async (c: AppContext) => {
+	if (!hasRole(c.var.mailboxRole, "owner")) return c.json({ error: "Only owners can manage members" }, 403);
+	const mailboxId = normalizeMailboxId(c.req.param("mailboxId")!);
+	const { email, role } = SetMemberBodySchema.parse(await c.req.json());
+	const result = await getAccessStub(c.env).setMember(mailboxId, normalizeMailboxId(email), role);
+	if (result === "last_owner") return c.json({ error: "A mailbox needs at least one owner" }, 409);
+	return c.json({ email: normalizeMailboxId(email), role });
+});
+
+app.delete("/api/v1/mailboxes/:mailboxId/members/:email", async (c: AppContext) => {
+	if (!hasRole(c.var.mailboxRole, "owner")) return c.json({ error: "Only owners can manage members" }, 403);
+	const mailboxId = normalizeMailboxId(c.req.param("mailboxId")!);
+	const result = await getAccessStub(c.env).removeMember(mailboxId, normalizeMailboxId(decodeURIComponent(c.req.param("email")!)));
+	if (result === "not_found") return c.json({ error: "Member not found" }, 404);
+	if (result === "last_owner") return c.json({ error: "A mailbox needs at least one owner" }, 409);
 	return c.body(null, 204);
 });
 

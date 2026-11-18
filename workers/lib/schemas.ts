@@ -113,6 +113,13 @@ export const CreateMailboxBodySchema = z.object({
 	email: z.string().email(),
 	name: z.string().min(1).max(200),
 	settings: MailboxSettingsSchema.partial().optional(),
+	/** Initial owner when authorization is enabled; defaults to the creator. */
+	owner: z.string().email().optional(),
+});
+
+export const SetMemberBodySchema = z.object({
+	email: z.string().email(),
+	role: z.enum(["owner", "member"]),
 });
 
 export const UpdateMailboxBodySchema = z.object({ settings: MailboxSettingsSchema });

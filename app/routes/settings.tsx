@@ -6,7 +6,9 @@ import { Badge, Button, Input, Loader, useKumoToastManager } from "@cloudflare/k
 import { RobotIcon, ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
+import MembersCard from "~/components/MembersCard";
 import { useMailbox, useUpdateMailbox } from "~/queries/mailboxes";
+import { useMe, useMembers } from "~/queries/members";
 
 // Placeholder shown in the textarea when no custom prompt is set.
 // The authoritative default prompt lives in workers/agent/index.ts (DEFAULT_SYSTEM_PROMPT).
@@ -17,6 +19,11 @@ export default function SettingsRoute() {
 	const toastManager = useKumoToastManager();
 	const { data: mailbox } = useMailbox(mailboxId);
 	const updateMailboxMutation = useUpdateMailbox();
+	const { data: me } = useMe();
+	const { data: members = [] } = useMembers(mailboxId);
+	const canManageMembers =
+		!!me?.authzEnabled &&
+		(me.isAdmin || members.some((m) => m.email === me.email && m.role === "owner"));
 
 	const [displayName, setDisplayName] = useState("");
 	const [agentPrompt, setAgentPrompt] = useState("");
@@ -83,6 +90,8 @@ export default function SettingsRoute() {
 						<Input label="Email" type="email" value={mailbox.email} disabled />
 					</div>
 				</div>
+
+				{canManageMembers && <MembersCard mailboxId={mailboxId!} />}
 
 				{/* Agent System Prompt */}
 				<div className="rounded-lg border border-kumo-line bg-kumo-base p-5">

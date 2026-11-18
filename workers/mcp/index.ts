@@ -22,6 +22,8 @@ import {
 } from "../lib/tools";
 import { Folders, FOLDER_TOOL_DESCRIPTION, MOVE_FOLDER_TOOL_DESCRIPTION } from "../../shared/folders";
 import type { Env } from "../types";
+import { filterVisibleMailboxes, getMailboxRole, hasRole } from "../lib/auth";
+import { normalizeMailboxId } from "../lib/mailbox";
 
 /** Wrap a plain result object into MCP content format. */
 function mcpText(result: unknown) {
@@ -61,7 +63,7 @@ function mcpResult(result: Record<string, unknown>) {
  * `/mcp` endpoint and can list mailboxes, read/search emails,
  * draft replies, send messages, and manage folders.
  */
-export class EmailMCP extends McpAgent<Env> {
+export class EmailMCP extends McpAgent<Env, unknown, { userEmail?: string }> {
 	server = new McpServer({
 		name: "open-inbox",
 		version: "1.0.0",
@@ -74,9 +76,14 @@ export class EmailMCP extends McpAgent<Env> {
 		 * Verify a mailbox exists in R2 before operating on it.
 		 * Returns an MCP error response if the mailbox is not found, or null if valid.
 		 */
-		const verifyMailbox = async (mailboxId: string) => {
+		// Identity is passed by workers/app.ts; missing identity gets no access.
+		const userEmail = () => this.props?.userEmail ?? "";
+
+		const verifyMailbox = async (rawMailboxId: string) => {
+			const mailboxId = normalizeMailboxId(rawMailboxId);
 			const obj = await env.BUCKET.head(`mailboxes/${mailboxId}.json`);
-			if (!obj) {
+			const role = obj ? await getMailboxRole(env, mailboxId, userEmail()) : null;
+			if (!obj || !hasRole(role, "member")) {
 				return mcpError(`Mailbox "${mailboxId}" not found. Use list_mailboxes to see available mailboxes.`);
 			}
 			return null;
@@ -88,7 +95,7 @@ export class EmailMCP extends McpAgent<Env> {
 			"List all available mailboxes",
 			{},
 			async () => {
-				const result = await toolListMailboxes(env);
+				const result = await filterVisibleMailboxes(env, userEmail(), await toolListMailboxes(env));
 				return mcpText(result);
 			},
 		);

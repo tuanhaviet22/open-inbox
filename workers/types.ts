@@ -5,4 +5,6 @@
 export interface Env extends Cloudflare.Env {
 	POLICY_AUD: string;
 	TEAM_DOMAIN: string;
+	/** Identity used for local development, where there is no Access JWT. */
+	DEV_USER_EMAIL?: string;
 }

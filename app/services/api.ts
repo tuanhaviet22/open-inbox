@@ -2,7 +2,7 @@
 // Licensed under the Apache 2.0 license found in the LICENSE file or at:
 //     https://opensource.org/licenses/Apache-2.0
 
-import type { Email, Folder, Mailbox } from "~/types";
+import type { Email, Folder, Mailbox, Member } from "~/types";
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
@@ -98,6 +98,15 @@ const api = {
 	// Config
 	getConfig: () =>
 		get<{ domains: string[]; emailAddresses: string[] }>("/api/v1/config"),
+
+	// Current user + members
+	getMe: () => get<{ email: string; isAdmin: boolean; authzEnabled: boolean }>("/api/v1/me"),
+	listMembers: (mailboxId: string) =>
+		get<Member[]>(`/api/v1/mailboxes/${mailboxId}/members`),
+	setMember: (mailboxId: string, email: string, role: Member["role"]) =>
+		put<Member>(`/api/v1/mailboxes/${mailboxId}/members`, { email, role }),
+	removeMember: (mailboxId: string, email: string) =>
+		del<void>(`/api/v1/mailboxes/${mailboxId}/members/${encodeURIComponent(email)}`),
 
 	// Mailboxes
 	listMailboxes: () => get<Mailbox[]>("/api/v1/mailboxes"),
