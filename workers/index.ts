@@ -47,6 +47,22 @@ const DraftBody = z.object({
 
 // -- Helpers --------------------------------------------------------
 
+/**
+ * Narrow view of the stub for list calls whose inferred RPC return type is so
+ * deep that tsc gives up (TS2589). Results are only forwarded as JSON.
+ */
+type ListStub = {
+	getEmails(o: GetEmailsOptions & { thread_id?: string }): Promise<unknown>;
+	getThreadedEmails(o: GetEmailsOptions): Promise<unknown>;
+	getThreadEmails(threadId: string): Promise<unknown>;
+	searchEmails(o: SearchFilterOptions & { page?: number; limit?: number }): Promise<unknown>;
+};
+
+/** Serialize directly; c.json() hits TS2589 on deep drizzle row types. */
+function jsonResponse(data: unknown): Response {
+	return new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json" } });
+}
+
 function intQuery(c: AppContext, key: string): number | undefined {
 	const v = c.req.query(key);
 	if (!v) return undefined;
@@ -162,19 +178,19 @@ app.get("/api/v1/mailboxes/:mailboxId/emails", async (c: AppContext) => {
 	const sortColumn = c.req.query("sortColumn") as GetEmailsOptions["sortColumn"]; // validated against an allow-list in the DO
 	const sortDirection = c.req.query("sortDirection") as "ASC" | "DESC" | undefined;
 	const stub = c.var.mailboxStub;
+	const listStub = stub as unknown as ListStub;
 
 	if (threaded && folder) {
-		const emails = await stub.getThreadedEmails({ folder, page, limit });
+		const emails = await listStub.getThreadedEmails({ folder, page, limit });
 		const totalCount = await stub.countThreadedEmails(folder);
-		// c.json() hits TS2589 on the drizzle row type, so serialize directly.
-		return c.body(JSON.stringify({ emails, totalCount }), 200, { "Content-Type": "application/json" });
+		return jsonResponse({ emails, totalCount });
 	}
-	const emails = await stub.getEmails({ folder, thread_id, page, limit, sortColumn, sortDirection });
+	const emails = await listStub.getEmails({ folder, thread_id, page, limit, sortColumn, sortDirection });
 	if (folder) {
 		const totalCount = await stub.countEmails({ folder, thread_id });
-		return c.json({ emails, totalCount });
+		return jsonResponse({ emails, totalCount });
 	}
-	return c.json(emails);
+	return jsonResponse(emails);
 });
 
 app.post("/api/v1/mailboxes/:mailboxId/emails", async (c: AppContext) => {
@@ -271,7 +287,7 @@ app.post("/api/v1/mailboxes/:mailboxId/emails/:id/move", async (c: AppContext) =
 // -- Threads --------------------------------------------------------
 
 app.get("/api/v1/mailboxes/:mailboxId/threads/:threadId", async (c: AppContext) => {
-	return c.json(await c.var.mailboxStub.getThreadEmails(c.req.param("threadId")!));
+	return jsonResponse(await (c.var.mailboxStub as unknown as ListStub).getThreadEmails(c.req.param("threadId")!));
 });
 
 app.post("/api/v1/mailboxes/:mailboxId/threads/:threadId/read", async (c: AppContext) => {
@@ -317,9 +333,9 @@ app.get("/api/v1/mailboxes/:mailboxId/search", async (c: AppContext) => {
 		is_starred: boolQuery(c, "is_starred"), has_attachment: boolQuery(c, "has_attachment"),
 	};
 	const stub = c.var.mailboxStub;
-	const emails = await stub.searchEmails({ ...searchOpts, page: intQuery(c, "page"), limit: intQuery(c, "limit") });
+	const emails = await (stub as unknown as ListStub).searchEmails({ ...searchOpts, page: intQuery(c, "page"), limit: intQuery(c, "limit") });
 	const totalCount = await stub.countSearchResults(searchOpts);
-	return c.json({ emails, totalCount });
+	return jsonResponse({ emails, totalCount });
 });
 
 // -- Attachments ----------------------------------------------------
