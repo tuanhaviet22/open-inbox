@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 import { LOCALE_NAMES, SUPPORTED_LOCALES, type Locale } from "../../shared/locales";
 import FiltersCard from "~/components/FiltersCard";
+import SignaturesCard from "~/components/SignaturesCard";
 import LabelsCard from "~/components/LabelsCard";
 import MembersCard from "~/components/MembersCard";
 import { useMailbox, useUpdateMailbox } from "~/queries/mailboxes";
@@ -120,6 +121,8 @@ export default function SettingsRoute() {
 				</div>
 
 				{canManageMembers && <MembersCard mailboxId={mailboxId!} />}
+
+				<SignaturesCard mailbox={mailbox} />
 
 				<LabelsCard mailboxId={mailboxId!} />
 				<FiltersCard mailboxId={mailboxId!} />

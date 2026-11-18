@@ -107,5 +107,25 @@
     "delete": "Xóa",
     "incomplete": "Hãy đặt tên, ít nhất một điều kiện và một hành động.",
     "error": "Không thể cập nhật bộ lọc"
+  },
+  "signatures": {
+    "title": "Chữ ký",
+    "description": "Tạo nhiều chữ ký. Chữ ký mặc định được thêm vào thư mới, thư trả lời và thư chuyển tiếp; khi soạn thư bạn có thể chèn bất kỳ chữ ký nào từ thanh công cụ.",
+    "empty": "Chưa có chữ ký nào.",
+    "default": "Mặc định",
+    "setDefault": "Đặt làm mặc định",
+    "clearDefault": "Bỏ mặc định",
+    "edit": "Sửa",
+    "delete": "Xóa",
+    "confirmDelete": "Xóa chữ ký “{{name}}”?",
+    "add": "Thêm chữ ký",
+    "name": "Tên chữ ký",
+    "save": "Lưu chữ ký",
+    "saveFailed": "Không thể lưu chữ ký",
+    "errors": {
+      "nameRequired": "Hãy đặt tên cho chữ ký.",
+      "nameTaken": "Đã có chữ ký khác dùng tên này.",
+      "contentRequired": "Chữ ký đang trống."
+    }
   }
 }

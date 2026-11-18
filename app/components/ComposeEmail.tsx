@@ -20,6 +20,7 @@ export default function ComposeEmail() {
 	const { isComposeModalOpen, closeComposeModal } = useUIStore();
 
 	const {
+		signatures,
 		to,
 		setTo,
 		cc,
@@ -106,7 +107,7 @@ export default function ComposeEmail() {
 						<Text size="sm" DANGEROUS_className="font-medium mb-1.5 block">
 							{t("fields.message")}
 						</Text>
-						<RichTextEditor value={body} onChange={setBody} />
+						<RichTextEditor value={body} onChange={setBody} signatures={signatures} />
 					</div>
 					<div className="flex justify-between items-center pt-2">
 						<Button

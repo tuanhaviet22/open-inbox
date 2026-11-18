@@ -10,6 +10,7 @@
  */
 import DOMPurify from "dompurify";
 import { formatQuotedDate } from "shared/dates";
+import { getDefaultSignature, type Signature, type SignatureSettings } from "shared/signatures";
 import { formatQuotedHeader } from "shared/mail-strings";
 import type { Attachment } from "~/types";
 
@@ -130,23 +131,18 @@ export function escapeHtml(text: string): string {
 		.replace(/'/g, "&#39;");
 }
 
-/**
- * Generate the HTML signature block for compose forms.
- */
-export function getSignatureBlock(settings?: {
-	signature?: { enabled: boolean; text?: string; html?: string };
-}): string {
-	const sig = settings?.signature;
-	if (sig?.enabled && (sig?.html || sig?.text)) {
-		// Sanitize HTML signatures with DOMPurify to allow safe formatting
-		// (bold, italic, links, etc.) while stripping scripts and event handlers.
-		// Text signatures are HTML-escaped since they have no formatting.
-		const content = sig.html
-			? DOMPurify.sanitize(sig.html)
-			: escapeHtml(sig.text || "");
-		return `<div style="border-top: 1px solid #ccc; margin-top: 16px; padding-top: 12px;">${content}</div>`;
-	}
-	return "";
+/** HTML block for one signature. HTML is sanitized; plain text is escaped. */
+export function signatureToBlock(sig: Signature): string {
+	if (!sig.html && !sig.text) return "";
+	// DOMPurify keeps safe formatting (bold, links, ...) and strips scripts and event handlers.
+	const content = sig.html ? DOMPurify.sanitize(sig.html) : escapeHtml(sig.text).replace(/\n/g, "<br>");
+	return `<div style="border-top: 1px solid #ccc; margin-top: 16px; padding-top: 12px;">${content}</div>`;
+}
+
+/** Block for the mailbox's default signature, added to new messages, replies and forwards. */
+export function getSignatureBlock(settings?: SignatureSettings | null): string {
+	const sig = getDefaultSignature(settings);
+	return sig ? signatureToBlock(sig) : "";
 }
 
 /**
