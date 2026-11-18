@@ -49,7 +49,7 @@ const SORT_COLUMN_MAP = {
 	starred: schema.emails.starred,
 } satisfies Record<SortColumn, typeof schema.emails[keyof typeof schema.emails]>;
 
-interface SearchFilterOptions {
+export interface SearchFilterOptions {
 	query: string;
 	folder?: string;
 	from?: string;
@@ -62,7 +62,7 @@ interface SearchFilterOptions {
 	has_attachment?: boolean;
 }
 
-interface GetEmailsOptions {
+export interface GetEmailsOptions {
 	folder?: string;
 	thread_id?: string;
 	page?: number;

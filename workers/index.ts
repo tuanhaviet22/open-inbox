@@ -24,6 +24,7 @@ import {
 	UpdateMailboxBodySchema,
 } from "./lib/schemas";
 import { handleReplyEmail, handleForwardEmail } from "./routes/reply-forward";
+import type { GetEmailsOptions, SearchFilterOptions } from "./durableObject";
 import { Folders } from "../shared/folders";
 import type { Env } from "./types";
 import { slugify } from "./lib/slug";
@@ -158,14 +159,15 @@ app.get("/api/v1/mailboxes/:mailboxId/emails", async (c: AppContext) => {
 	const threaded = boolQuery(c, "threaded");
 	const page = intQuery(c, "page");
 	const limit = intQuery(c, "limit");
-	const sortColumn = c.req.query("sortColumn") as any;
+	const sortColumn = c.req.query("sortColumn") as GetEmailsOptions["sortColumn"]; // validated against an allow-list in the DO
 	const sortDirection = c.req.query("sortDirection") as "ASC" | "DESC" | undefined;
 	const stub = c.var.mailboxStub;
 
 	if (threaded && folder) {
-		const emails = await (stub as any).getThreadedEmails({ folder, page, limit });
-		const totalCount = await (stub as any).countThreadedEmails(folder);
-		return c.json({ emails, totalCount });
+		const emails = await stub.getThreadedEmails({ folder, page, limit });
+		const totalCount = await stub.countThreadedEmails(folder);
+		// c.json() hits TS2589 on the drizzle row type, so serialize directly.
+		return c.body(JSON.stringify({ emails, totalCount }), 200, { "Content-Type": "application/json" });
 	}
 	const emails = await stub.getEmails({ folder, thread_id, page, limit, sortColumn, sortDirection });
 	if (folder) {
@@ -190,7 +192,7 @@ app.post("/api/v1/mailboxes/:mailboxId/emails", async (c: AppContext) => {
 
 	const { messageId, outgoingMessageId } = generateMessageId(fromDomain);
 	const stub = c.var.mailboxStub;
-	const rateLimitError = await (stub as any).checkSendRateLimit();
+	const rateLimitError = await stub.checkSendRateLimit();
 	if (rateLimitError) return c.json({ error: rateLimitError }, 429);
 	const attachmentData = await storeAttachments(c.env.BUCKET, messageId, attachments);
 
@@ -269,7 +271,7 @@ app.post("/api/v1/mailboxes/:mailboxId/emails/:id/move", async (c: AppContext) =
 // -- Threads --------------------------------------------------------
 
 app.get("/api/v1/mailboxes/:mailboxId/threads/:threadId", async (c: AppContext) => {
-	return c.json(await (c.var.mailboxStub as any).getThreadEmails(c.req.param("threadId")!));
+	return c.json(await c.var.mailboxStub.getThreadEmails(c.req.param("threadId")!));
 });
 
 app.post("/api/v1/mailboxes/:mailboxId/threads/:threadId/read", async (c: AppContext) => {
@@ -308,13 +310,13 @@ app.delete("/api/v1/mailboxes/:mailboxId/folders/:id", async (c: AppContext) => 
 // -- Search ---------------------------------------------------------
 
 app.get("/api/v1/mailboxes/:mailboxId/search", async (c: AppContext) => {
-	const searchOpts: Record<string, unknown> = {
+	const searchOpts: SearchFilterOptions = {
 		query: c.req.query("query") || "", folder: c.req.query("folder"), from: c.req.query("from"),
 		to: c.req.query("to"), subject: c.req.query("subject"), date_start: c.req.query("date_start"),
 		date_end: c.req.query("date_end"), is_read: boolQuery(c, "is_read"),
 		is_starred: boolQuery(c, "is_starred"), has_attachment: boolQuery(c, "has_attachment"),
 	};
-	const stub = c.var.mailboxStub as any;
+	const stub = c.var.mailboxStub;
 	const emails = await stub.searchEmails({ ...searchOpts, page: intQuery(c, "page"), limit: intQuery(c, "limit") });
 	const totalCount = await stub.countSearchResults(searchOpts);
 	return c.json({ emails, totalCount });
@@ -397,7 +399,7 @@ async function receiveEmail(event: { raw: ReadableStream; rawSize: number }, env
 	let threadId = emailReferences[0] || inReplyTo || messageId;
 
 	if (!inReplyTo && emailReferences.length === 0) {
-		const subjectThread = await (stub as any).findThreadBySubject(parsedEmail.subject || "", parsedEmail.from?.address || undefined);
+		const subjectThread = await stub.findThreadBySubject(parsedEmail.subject || "", parsedEmail.from?.address || undefined);
 		if (subjectThread) threadId = subjectThread;
 	}
 
