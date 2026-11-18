@@ -27,7 +27,7 @@ import {
 	buildThreadingHeaders,
 } from "./email-helpers";
 import { verifyDraft } from "./ai";
-import { sendEmail } from "../email-sender";
+import { getEmailProvider } from "../email-sender";
 import { Folders } from "../../shared/folders";
 import type { Env } from "../types";
 
@@ -470,7 +470,7 @@ export async function toolSendReply(
 	const fullBodyHtml = sanitizedBody + quotedBlock;
 
 	try {
-		await sendEmail(env.EMAIL, {
+		await getEmailProvider(env).send({
 			to: params.to,
 			from: mailboxId,
 			subject: params.subject,
@@ -535,7 +535,7 @@ export async function toolSendEmail(
 	}
 
 	try {
-		await sendEmail(env.EMAIL, {
+		await getEmailProvider(env).send({
 			to: params.to,
 			from: mailboxId,
 			subject: params.subject,

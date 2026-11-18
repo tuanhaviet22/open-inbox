@@ -70,3 +70,51 @@ export async function sendEmail(
 	const result = await binding.send(message as any);
 	return { messageId: result.messageId };
 }
+
+// ── Providers ──────────────────────────────────────────────────────
+
+/** Anything that can deliver an outbound email. */
+export interface EmailProvider {
+	readonly name: string;
+	send(params: SendEmailParams): Promise<{ messageId: string }>;
+}
+
+export function cloudflareProvider(binding: SendEmail): EmailProvider {
+	return { name: "cloudflare", send: (params) => sendEmail(binding, params) };
+}
+
+/**
+ * Relay provider: POSTs the message as JSON to an HTTPS endpoint you run
+ * (an SMTP bridge, SES/Postmark/Mailgun adapter, ...). Workers cannot open
+ * raw SMTP/IMAP sockets, so an HTTP relay is the portable option.
+ * The endpoint should answer 2xx, optionally with `{ "messageId": "..." }`.
+ */
+export function webhookProvider(url: string, secret?: string, fetchImpl: typeof fetch = fetch): EmailProvider {
+	return {
+		name: "webhook",
+		async send(params) {
+			const res = await fetchImpl(url, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					...(secret ? { Authorization: `Bearer ${secret}` } : {}),
+				},
+				body: JSON.stringify(params),
+			});
+			if (!res.ok) throw new Error(`Outbound webhook failed with status ${res.status}`);
+			const data = (await res.json().catch(() => ({}))) as { messageId?: string };
+			return { messageId: data.messageId ?? crypto.randomUUID() };
+		},
+	};
+}
+
+/** Pick the outbound provider: the webhook relay when configured, else Cloudflare. */
+export function getEmailProvider(env: {
+	EMAIL: SendEmail;
+	OUTBOUND_WEBHOOK_URL?: string;
+	OUTBOUND_WEBHOOK_SECRET?: string;
+}): EmailProvider {
+	return env.OUTBOUND_WEBHOOK_URL
+		? webhookProvider(env.OUTBOUND_WEBHOOK_URL, env.OUTBOUND_WEBHOOK_SECRET)
+		: cloudflareProvider(env.EMAIL);
+}

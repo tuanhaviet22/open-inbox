@@ -89,6 +89,14 @@ To enable per-mailbox authorization, set `ADMIN_EMAILS` (comma-separated) in `wr
 - The rules apply to the web API, the agent WebSocket (`/agents/*`) and MCP. Users without access get a 404.
 - Owners manage members from the mailbox Settings page.
 
+## Outbound providers
+
+Mail is sent through the Cloudflare `send_email` binding by default. To use another service, set `OUTBOUND_WEBHOOK_URL` (and optionally the `OUTBOUND_WEBHOOK_SECRET` secret): Open Inbox will POST each outgoing message as JSON (`to`, `from`, `subject`, `html`, `text`, `attachments`, ...) with `Authorization: Bearer <secret>` and expects a 2xx reply, optionally `{ "messageId": "..." }`. Workers cannot open raw SMTP/IMAP connections, so an HTTP relay you host (SMTP bridge, SES, Postmark, ...) is the supported way. Receiving is still done by Cloudflare Email Routing.
+
+## Labels and filters
+
+Each mailbox has labels (color-coded, toggled on an email from the reading pane) and filter rules in Settings. A rule matches new incoming mail on sender, recipient, subject or text, and can add a label, move to a folder, mark as read or star. The agent auto-draft is skipped when a rule moves the mail out of the inbox.
+
 ## Internationalization
 
 The UI ships in English and Vietnamese. The language is chosen from the `lang` cookie (set by the language switcher), then `Accept-Language`, then English. Text that goes into outgoing mail (quote headers, forward blocks) follows the mailbox's *Language of outgoing email* setting.
