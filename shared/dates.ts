@@ -17,6 +17,11 @@ function intlLocale(locale: string | null | undefined): string {
 	return matchLocale(locale) === "vi" ? "vi-VN" : "en-US";
 }
 
+/** Optional locale -> BCP-47 tag; `undefined` keeps the runtime default. */
+function optLocale(locale: string | null | undefined): string | undefined {
+	return locale ? intlLocale(locale) : undefined;
+}
+
 /** Parse safely — returns null on invalid dates instead of NaN-date. */
 function safeParse(dateStr: string | undefined | null): Date | null {
 	if (!dateStr) return null;
@@ -34,24 +39,24 @@ function safeParse(dateStr: string | undefined | null): Date | null {
  * - This year: "Apr 15"
  * - Older: "Apr 15, 2024"
  */
-export function formatListDate(dateStr: string): string {
+export function formatListDate(dateStr: string, locale?: string | null): string {
 	const date = safeParse(dateStr);
 	if (!date) return dateStr;
 
 	const now = new Date();
 	if (date.toDateString() === now.toDateString()) {
-		return date.toLocaleTimeString(undefined, {
+		return date.toLocaleTimeString(optLocale(locale), {
 			hour: "numeric",
 			minute: "2-digit",
 		});
 	}
 	if (date.getFullYear() === now.getFullYear()) {
-		return date.toLocaleDateString(undefined, {
+		return date.toLocaleDateString(optLocale(locale), {
 			month: "short",
 			day: "numeric",
 		});
 	}
-	return date.toLocaleDateString(undefined, {
+	return date.toLocaleDateString(optLocale(locale), {
 		month: "short",
 		day: "numeric",
 		year: "numeric",
@@ -62,11 +67,11 @@ export function formatListDate(dateStr: string): string {
  * Email detail header.
  * "Tue, Apr 15, 3:42 PM"
  */
-export function formatDetailDate(dateStr: string): string {
+export function formatDetailDate(dateStr: string, locale?: string | null): string {
 	const date = safeParse(dateStr);
 	if (!date) return dateStr;
 
-	return date.toLocaleDateString(undefined, {
+	return date.toLocaleDateString(optLocale(locale), {
 		weekday: "short",
 		month: "short",
 		day: "numeric",
@@ -79,11 +84,11 @@ export function formatDetailDate(dateStr: string): string {
  * Thread message headers — time only.
  * "3:42 PM"
  */
-export function formatShortDate(dateStr: string): string {
+export function formatShortDate(dateStr: string, locale?: string | null): string {
 	const date = safeParse(dateStr);
 	if (!date) return dateStr;
 
-	return date.toLocaleTimeString(undefined, {
+	return date.toLocaleTimeString(optLocale(locale), {
 		hour: "numeric",
 		minute: "2-digit",
 	});

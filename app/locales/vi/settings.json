@@ -1,1 +1,78 @@
-{}
+{
+  "title": "Cài đặt",
+  "saveChanges": "Lưu thay đổi",
+  "toast": {
+    "saved": "Đã lưu cài đặt!",
+    "saveFailed": "Không thể lưu cài đặt"
+  },
+  "account": {
+    "title": "Tài khoản",
+    "displayName": "Tên hiển thị",
+    "email": "Email"
+  },
+  "outgoingLanguage": {
+    "label": "Ngôn ngữ thư gửi đi",
+    "auto": "Giống giao diện",
+    "description": "Dùng cho phần văn bản được thêm vào thư gửi từ hộp thư này, như dòng mở đầu khi trả lời và nhãn thư chuyển tiếp."
+  },
+  "agent": {
+    "title": "Lời nhắc cho Trợ lý AI",
+    "custom": "Tùy chỉnh",
+    "default": "Mặc định",
+    "reset": "Đặt lại mặc định",
+    "description": "Tùy chỉnh cách Trợ lý AI hoạt động với hộp thư này. Để trống để dùng lời nhắc mặc định có sẵn.",
+    "hint": "Lời nhắc được gửi dưới dạng tin nhắn hệ thống tới mô hình AI. Nó quy định tính cách, văn phong và quy tắc hành xử của trợ lý."
+  },
+  "members": {
+    "title": "Thành viên",
+    "owner": "chủ sở hữu",
+    "member": "thành viên",
+    "makeOwner": "Đặt làm chủ sở hữu",
+    "makeMember": "Đặt làm thành viên",
+    "remove": "Xóa",
+    "addByEmail": "Thêm thành viên bằng email",
+    "add": "Thêm",
+    "requestFailed": "Yêu cầu thất bại"
+  },
+  "notFound": {
+    "title": "404 -- Không tìm thấy trang",
+    "description": "Trang bạn tìm không tồn tại.",
+    "goHome": "Về trang chủ"
+  },
+  "mailbox": {
+    "closeSidebar": "Đóng thanh bên"
+  },
+  "home": {
+    "title": "Hộp thư",
+    "new": "Hộp thư mới",
+    "create": "Tạo hộp thư",
+    "deleteAria": "Xóa hộp thư {{email}}",
+    "empty": {
+      "title": "Chưa có hộp thư nào",
+      "configured": "Định tuyến email đã được cấu hình nhưng chưa có hộp thư nào được tạo. Chúng sẽ tự động xuất hiện tại đây.",
+      "unconfigured": "Tạo một hộp thư để bắt đầu gửi và nhận email với tên miền của bạn."
+    },
+    "createDialog": {
+      "title": "Tạo hộp thư mới",
+      "emailAddress": "Địa chỉ email",
+      "prefix": "Phần đầu địa chỉ",
+      "domain": "Tên miền",
+      "noDomain": "chưa có tên miền",
+      "displayName": "Tên hiển thị (tùy chọn)",
+      "submit": "Tạo"
+    },
+    "deleteDialog": {
+      "title": "Xóa hộp thư",
+      "description": "Bạn có chắc muốn xóa <strong>{{email}}</strong>? Hành động này không thể hoàn tác."
+    },
+    "toast": {
+      "created": "Đã tạo hộp thư thành công!",
+      "deleted": "Đã xóa hộp thư",
+      "deleteFailed": "Không thể xóa hộp thư"
+    },
+    "errors": {
+      "fillAll": "Vui lòng điền đầy đủ các trường",
+      "createFailed": "Không thể tạo hộp thư"
+    }
+  }
+}

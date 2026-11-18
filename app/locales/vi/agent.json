@@ -1,1 +1,63 @@
-{}
+{
+  "tabs": {
+    "agent": "Trợ lý",
+    "mcp": "MCP"
+  },
+  "sidebar": {
+    "loading": "Đang tải trợ lý...",
+    "loadError": "Không thể tải bảng trợ lý"
+  },
+  "panel": {
+    "connecting": "Đang kết nối...",
+    "connectError": "Không thể kết nối với trợ lý. Hãy tải lại trang để thử lại.",
+    "title": "Trợ lý email",
+    "badge": "AI",
+    "clearChat": "Xóa cuộc trò chuyện",
+    "clearConfirm": "Xóa lịch sử trò chuyện?",
+    "intro": "Tôi có thể đọc email, tìm kiếm cuộc hội thoại và soạn thư trả lời.",
+    "thinking": "Đang suy nghĩ...",
+    "stop": "Dừng tạo",
+    "placeholder": "Hỏi trợ lý email của bạn...",
+    "inputLabel": "Ô nhập tin nhắn",
+    "sendLabel": "Gửi tin nhắn",
+    "editAndSend": "Chỉnh sửa và gửi trong trình soạn thư",
+    "editDraftPrompt": "Hãy để tôi chỉnh sửa thư nháp này trước. Cho tôi xem nội dung hiện có để tôi sửa."
+  },
+  "suggestions": {
+    "latest": "Cho tôi xem các email mới nhất trong hộp thư đến",
+    "unread": "Có email nào chưa đọc không?",
+    "draft": "Soạn thư trả lời email mới nhất"
+  },
+  "toolLabels": {
+    "list_emails": "Đang lấy email",
+    "get_email": "Đang đọc email",
+    "get_thread": "Đang tải cuộc hội thoại",
+    "search_emails": "Đang tìm kiếm",
+    "draft_email": "Đang soạn email",
+    "draft_reply": "Đang soạn thư trả lời",
+    "discard_draft": "Đang hủy thư nháp",
+    "mark_email_read": "Đang cập nhật trạng thái",
+    "move_email": "Đang chuyển email"
+  },
+  "mcp": {
+    "copy": "Sao chép",
+    "copied": "Đã sao chép!",
+    "copyLabel": "Sao chép vào bộ nhớ tạm",
+    "title": "Kết nối qua MCP",
+    "intro": "Trợ lý email này cung cấp một máy chủ MCP để các trợ lý lập trình AI có thể quản lý hộp thư của bạn trực tiếp — đọc email, tìm kiếm, soạn thư trả lời và gửi thư bằng ngôn ngữ tự nhiên.",
+    "serverUrl": "URL máy chủ",
+    "availableTools": "Công cụ khả dụng",
+    "tools": {
+      "list_mailboxes": "Liệt kê tất cả hộp thư",
+      "list_emails": "Liệt kê email trong một thư mục",
+      "get_email": "Đọc toàn bộ email kèm nội dung",
+      "get_thread": "Tải một cuộc hội thoại",
+      "search_emails": "Tìm email theo từ khóa",
+      "draft_reply": "Soạn thư nháp trả lời email",
+      "send_reply": "Gửi thư trả lời",
+      "send_email": "Gửi email mới",
+      "mark_email_read": "Đánh dấu email đã đọc/chưa đọc",
+      "move_email": "Chuyển email sang thư mục khác"
+    }
+  }
+}

@@ -3,6 +3,7 @@
 //     https://opensource.org/licenses/Apache-2.0
 
 import DOMPurify from "dompurify";
+import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface EmailIframeProps {
@@ -28,6 +29,7 @@ interface EmailIframeProps {
  *   iframe as a defense-in-depth layer.
  */
 export default function EmailIframe({ body, autoSize }: EmailIframeProps) {
+	const { t } = useTranslation("mailbox");
 	const iframeRef = useRef<HTMLIFrameElement>(null);
 	const [height, setHeight] = useState(autoSize ? 100 : 0);
 
@@ -145,7 +147,7 @@ ul, ol { padding-left: 20px; margin: 4px 0; }
 			className="block w-full border-0"
 			style={autoSize ? { height: `${height}px` } : { height: "100%" }}
 			sandbox="allow-scripts allow-popups allow-top-navigation-by-user-activation"
-			title="Email content"
+			title={t("panel.emailContent")}
 		/>
 	);
 }

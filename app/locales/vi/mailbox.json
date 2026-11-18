@@ -1,1 +1,120 @@
-{}
+{
+  "sidebar": {
+    "mailboxes": "Hộp thư",
+    "mailboxFallback": "Hộp thư",
+    "compose": "Soạn thư",
+    "folders": "Thư mục",
+    "newFolder": "Thư mục mới",
+    "createFolderAria": "Tạo thư mục mới",
+    "createFolderTitle": "Tạo thư mục",
+    "folderName": "Tên thư mục",
+    "folderPlaceholder": "VD: Dự án",
+    "create": "Tạo"
+  },
+  "header": {
+    "toggleSidebar": "Bật/tắt thanh bên",
+    "searchLabel": "Tìm kiếm thư",
+    "searchPlaceholder": "Tìm kiếm thư... (thử from:tên, is:unread, has:attachment)",
+    "clearSearch": "Xóa tìm kiếm",
+    "search": "Tìm kiếm",
+    "hideAgentPanel": "Ẩn bảng trợ lý AI",
+    "showAgentPanel": "Hiện bảng trợ lý AI",
+    "toggleAgentPanel": "Bật/tắt bảng trợ lý AI",
+    "settings": "Cài đặt"
+  },
+  "emailList": {
+    "empty": {
+      "inbox": {
+        "title": "Hộp thư đến trống",
+        "description": "Thư mới sẽ xuất hiện ở đây khi được gửi đến. Hãy gửi một email để bắt đầu cuộc trò chuyện."
+      },
+      "sent": {
+        "title": "Chưa có thư đã gửi",
+        "description": "Các thư bạn gửi sẽ hiển thị ở đây."
+      },
+      "draft": {
+        "title": "Chưa có thư nháp",
+        "description": "Các thư bạn đang soạn dở sẽ được lưu ở đây."
+      },
+      "archive": {
+        "title": "Kho lưu trữ trống",
+        "description": "Chuyển thư vào đây để giữ hộp thư đến gọn gàng mà không cần xóa."
+      },
+      "trash": {
+        "title": "Thùng rác trống",
+        "description": "Thư đã xóa sẽ xuất hiện ở đây. Bạn có thể khôi phục hoặc xóa vĩnh viễn."
+      },
+      "default": {
+        "title": "Không có thư",
+        "description": "Thư mục này trống."
+      }
+    },
+    "compose": "Soạn thư",
+    "conversations_one": "{{count}} cuộc hội thoại",
+    "conversations_other": "{{count}} cuộc hội thoại",
+    "refreshing": "Đang làm mới...",
+    "refresh": "Làm mới",
+    "draft": "Thư nháp",
+    "needsReply": "Cần trả lời",
+    "markRead": "Đánh dấu đã đọc",
+    "markUnread": "Đánh dấu chưa đọc",
+    "star": "Gắn sao",
+    "unstar": "Bỏ gắn sao",
+    "delete": "Xóa",
+    "confirmDelete": "Bạn có chắc muốn xóa thư này không?"
+  },
+  "search": {
+    "backToInbox": "Quay lại hộp thư đến",
+    "title": "Kết quả tìm kiếm",
+    "results_one": "{{count}} kết quả",
+    "results_other": "{{count}} kết quả",
+    "noResults": "Không tìm thấy kết quả",
+    "nothingMatched": "Không có kết quả nào khớp với \"{{query}}\". Hãy thử từ khóa khác hoặc kiểm tra chính tả.",
+    "enterTerm": "Nhập từ khóa để tìm thư theo tiêu đề, người gửi hoặc nội dung.",
+    "tipPrefix": "Mẹo: Dùng các toán tử như",
+    "resultsFor_one": "{{count}} kết quả cho \"{{query}}\"",
+    "resultsFor_other": "{{count}} kết quả cho \"{{query}}\""
+  },
+  "panel": {
+    "backToList": "Quay lại danh sách",
+    "sending": "Đang gửi...",
+    "send": "Gửi",
+    "edit": "Sửa",
+    "discard": "Hủy bỏ",
+    "reply": "Trả lời",
+    "replyAll": "Trả lời tất cả",
+    "forward": "Chuyển tiếp",
+    "star": "Gắn sao",
+    "unstar": "Bỏ gắn sao",
+    "markUnread": "Đánh dấu chưa đọc",
+    "markRead": "Đánh dấu đã đọc",
+    "viewSource": "Xem nguồn",
+    "delete": "Xóa",
+    "close": "Đóng",
+    "moveToFolder": "Chuyển đến thư mục",
+    "moveTo": "Chuyển đến",
+    "messagesInThread_one": "{{count}} thư trong cuộc hội thoại này",
+    "messagesInThread_other": "{{count}} thư trong cuộc hội thoại này",
+    "to": "Đến: {{recipient}}",
+    "draftReply": "Thư trả lời nháp",
+    "you": "Bạn",
+    "draft": "Thư nháp",
+    "collapseMessage": "Thu gọn thư",
+    "sourceTitle": "Tiêu đề nguồn của thư",
+    "noHeaders": "Không có dữ liệu tiêu đề cho thư này.",
+    "downloadOriginal": "Tải bản gốc",
+    "emailContent": "Nội dung thư",
+    "attachments_one": "{{count}} tệp đính kèm",
+    "attachments_other": "{{count}} tệp đính kèm",
+    "confirmDelete": "Bạn có chắc muốn xóa thư này không?",
+    "confirmDiscardDraft": "Hủy bỏ thư nháp này?",
+    "toast": {
+      "draftDiscarded": "Đã hủy bỏ thư nháp",
+      "noRecipient": "Không thể gửi: thư nháp chưa có người nhận.",
+      "noValidRecipient": "Không thể gửi: thư nháp chưa có người nhận hợp lệ.",
+      "sent": "Đã gửi thư!",
+      "sendFailed": "Gửi thư thất bại."
+    },
+    "noSubject": "(không có tiêu đề)"
+  }
+}

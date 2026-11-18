@@ -1,1 +1,78 @@
-{}
+{
+  "title": "Settings",
+  "saveChanges": "Save Changes",
+  "toast": {
+    "saved": "Settings saved!",
+    "saveFailed": "Failed to save settings"
+  },
+  "account": {
+    "title": "Account",
+    "displayName": "Display Name",
+    "email": "Email"
+  },
+  "outgoingLanguage": {
+    "label": "Language of outgoing email",
+    "auto": "Same as interface",
+    "description": "Used for the text added to emails sent from this mailbox, such as reply headers and forwarded message labels."
+  },
+  "agent": {
+    "title": "AI Agent Prompt",
+    "custom": "Custom",
+    "default": "Default",
+    "reset": "Reset to default",
+    "description": "Customize how the AI agent behaves for this mailbox. Leave empty to use the built-in default prompt.",
+    "hint": "The prompt is sent as the system message to the AI model. It controls the agent's personality, writing style, and behavior rules."
+  },
+  "members": {
+    "title": "Members",
+    "owner": "owner",
+    "member": "member",
+    "makeOwner": "Make owner",
+    "makeMember": "Make member",
+    "remove": "Remove",
+    "addByEmail": "Add member by email",
+    "add": "Add",
+    "requestFailed": "Request failed"
+  },
+  "notFound": {
+    "title": "404 -- Page Not Found",
+    "description": "The page you're looking for doesn't exist.",
+    "goHome": "Go Home"
+  },
+  "mailbox": {
+    "closeSidebar": "Close sidebar"
+  },
+  "home": {
+    "title": "Mailboxes",
+    "new": "New Mailbox",
+    "create": "Create Mailbox",
+    "deleteAria": "Delete mailbox {{email}}",
+    "empty": {
+      "title": "No mailboxes yet",
+      "configured": "Your email routing is configured but no mailboxes have been created yet. They will appear here automatically.",
+      "unconfigured": "Create a mailbox to start sending and receiving emails with your domain."
+    },
+    "createDialog": {
+      "title": "Create New Mailbox",
+      "emailAddress": "Email Address",
+      "prefix": "Address prefix",
+      "domain": "Domain",
+      "noDomain": "no domain",
+      "displayName": "Display Name (optional)",
+      "submit": "Create"
+    },
+    "deleteDialog": {
+      "title": "Delete Mailbox",
+      "description": "Are you sure you want to delete <strong>{{email}}</strong>? This action cannot be undone."
+    },
+    "toast": {
+      "created": "Mailbox created successfully!",
+      "deleted": "Mailbox deleted",
+      "deleteFailed": "Failed to delete mailbox"
+    },
+    "errors": {
+      "fillAll": "Please fill in all fields",
+      "createFailed": "Failed to create mailbox"
+    }
+  }
+}

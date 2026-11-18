@@ -78,7 +78,27 @@ npm run deploy
 - [Workers AI](https://developers.cloudflare.com/workers-ai/) enabled (for the agent)
 - [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) configured for deployed/shared environments (required in production)
 
-Any user who passes the shared Cloudflare Access policy can access all mailboxes in this app by design. This includes the MCP server at `/mcp` -- external AI tools (Claude Code, Cursor, etc.) connected via MCP can operate on any mailbox by passing a `mailboxId` parameter. There is no per-mailbox authorization; the Cloudflare Access policy is the single trust boundary.
+### Access model
+
+By default (`ADMIN_EMAILS` empty) any user who passes the shared Cloudflare Access policy can access all mailboxes, including through the MCP server at `/mcp`.
+
+To enable per-mailbox authorization, set `ADMIN_EMAILS` (comma-separated) in `wrangler.jsonc` or as a secret. Then:
+
+- Identity comes from the `email` claim of the Access JWT (locally, `DEV_USER_EMAIL`, default `dev@localhost`).
+- Admins can see every mailbox and create new ones. Each mailbox has **owners** (manage settings and members) and **members** (read and send).
+- The rules apply to the web API, the agent WebSocket (`/agents/*`) and MCP. Users without access get a 404.
+- Owners manage members from the mailbox Settings page.
+
+## Internationalization
+
+The UI ships in English and Vietnamese. The language is chosen from the `lang` cookie (set by the language switcher), then `Accept-Language`, then English. Text that goes into outgoing mail (quote headers, forward blocks) follows the mailbox's *Language of outgoing email* setting.
+
+To add a language:
+
+1. Add the code to `SUPPORTED_LOCALES` and `LOCALE_NAMES` in `shared/locales.ts`.
+2. Copy `app/locales/en/` to `app/locales/<code>/` and translate the JSON files.
+3. Add the language to `shared/mail-strings.ts`.
+4. Run `npm test`: a test checks every language has the same keys as English.
 
 ## Architecture
 

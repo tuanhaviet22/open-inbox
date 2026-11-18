@@ -1,1 +1,56 @@
-{}
+{
+  "titles": {
+    "editDraft": "Sửa thư nháp",
+    "reply": "Trả lời",
+    "replyAll": "Trả lời tất cả",
+    "forward": "Chuyển tiếp",
+    "new": "Soạn thư"
+  },
+  "fields": {
+    "to": "Đến",
+    "cc": "CC",
+    "bcc": "BCC",
+    "ccBcc": "CC / BCC",
+    "subject": "Chủ đề",
+    "message": "Nội dung"
+  },
+  "placeholders": {
+    "recipients": "nguoinhan@example.com, khac@example.com",
+    "recipient": "nguoinhan@example.com",
+    "addressList": "Phân tách nhiều địa chỉ bằng dấu phẩy",
+    "subject": "Chủ đề thư"
+  },
+  "actions": {
+    "discard": "Hủy bỏ",
+    "saveDraft": "Lưu thư nháp",
+    "saving": "Đang lưu...",
+    "sending": "Đang gửi...",
+    "closeCompose": "Đóng cửa sổ soạn thư"
+  },
+  "errors": {
+    "noMailbox": "Chưa chọn hộp thư.",
+    "noRecipient": "Hãy thêm ít nhất một người nhận.",
+    "saveDraftFailed": "Không thể lưu thư nháp.",
+    "sendFailed": "Không thể gửi thư."
+  },
+  "toasts": {
+    "draftSaved": "Đã lưu thư nháp!",
+    "sending": "Đang gửi thư...",
+    "sent": "Đã gửi thư!"
+  },
+  "editor": {
+    "bold": "In đậm",
+    "italic": "In nghiêng",
+    "underline": "Gạch chân",
+    "strikethrough": "Gạch ngang",
+    "bulletList": "Danh sách dấu đầu dòng",
+    "numberedList": "Danh sách đánh số",
+    "blockquote": "Trích dẫn",
+    "link": "Liên kết",
+    "removeLink": "Xóa liên kết",
+    "horizontalRule": "Đường kẻ ngang",
+    "undo": "Hoàn tác",
+    "redo": "Làm lại",
+    "linkPrompt": "URL"
+  }
+}

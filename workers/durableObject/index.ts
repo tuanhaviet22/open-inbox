@@ -8,6 +8,7 @@ import { eq, and, or, asc, desc, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { Folders } from "../../shared/folders";
+import { foldText, htmlToSearchText } from "../../shared/text";
 import type { Env } from "../types";
 import { applyMigrations, mailboxMigrations } from "./migrations";
 
@@ -99,6 +100,20 @@ interface AttachmentData {
 	disposition?: string | null;
 }
 
+/** Folded text of every searchable field of an email. */
+function buildSearchNorm(e: {
+	subject?: string | null;
+	sender?: string | null;
+	recipient?: string | null;
+	cc?: string | null;
+	bcc?: string | null;
+	body?: string | null;
+}): string {
+	return foldText(
+		[e.subject, e.sender, e.recipient, e.cc, e.bcc, htmlToSearchText(e.body)].filter(Boolean).join(" "),
+	);
+}
+
 export class MailboxDO extends DurableObject<Env> {
 	declare __DURABLE_OBJECT_BRAND: never;
 	db: ReturnType<typeof drizzle>;
@@ -107,6 +122,26 @@ export class MailboxDO extends DurableObject<Env> {
 		super(state, env);
 		this.db = drizzle(this.ctx.storage, { schema });
 		applyMigrations(this.ctx.storage.sql, mailboxMigrations, this.ctx.storage);
+		this.#backfillSearchColumns();
+	}
+
+	/** Fill the folded search columns for rows that predate migration 9. */
+	#backfillSearchColumns() {
+		const sql = this.ctx.storage.sql;
+		for (;;) {
+			const rows = [...sql.exec(
+				`SELECT id, subject, sender, recipient, cc, bcc, body FROM emails WHERE search_norm IS NULL LIMIT 200`,
+			)] as Array<Record<string, string | null>>;
+			if (rows.length === 0) return;
+			for (const r of rows) {
+				sql.exec(
+					`UPDATE emails SET search_norm = ?1, subject_norm = ?2 WHERE id = ?3`,
+					buildSearchNorm(r),
+					foldText(r.subject),
+					r.id,
+				);
+			}
+		}
 	}
 
 	// ── Email CRUD (Drizzle) ───────────────────────────────────────
@@ -689,11 +724,9 @@ export class MailboxDO extends DurableObject<Env> {
 		};
 
 		if (query) {
-			const p1 = addParam(`%${query}%`);
-			const p2 = addParam(`%${query}%`);
-			const p3 = addParam(`%${query}%`);
-			const p4 = addParam(`%${query}%`);
-			conditions.push(`(${prefix}subject LIKE ${p1} OR ${prefix}body LIKE ${p2} OR ${prefix}sender LIKE ${p3} OR ${prefix}recipient LIKE ${p4} OR ${prefix}cc LIKE ${p4} OR ${prefix}bcc LIKE ${p4})`);
+			// Matches against the folded copy so accents and case are ignored.
+			const p1 = addParam(`%${foldText(query)}%`);
+			conditions.push(`${prefix}search_norm LIKE ${p1}`);
 		}
 		if (folder) {
 			const p = addParam(folder);
@@ -701,7 +734,7 @@ export class MailboxDO extends DurableObject<Env> {
 		}
 		if (from) { const p = addParam(`%${from}%`); conditions.push(`${prefix}sender LIKE ${p}`); }
 		if (to) { const p = addParam(`%${to}%`); conditions.push(`(${prefix}recipient LIKE ${p} OR ${prefix}cc LIKE ${p} OR ${prefix}bcc LIKE ${p})`); }
-		if (subject) { const p = addParam(`%${subject}%`); conditions.push(`${prefix}subject LIKE ${p}`); }
+		if (subject) { const p = addParam(`%${foldText(subject)}%`); conditions.push(`${prefix}subject_norm LIKE ${p}`); }
 		if (date_start) { const p = addParam(date_start); conditions.push(`${prefix}date >= ${p}`); }
 		if (date_end) { const p = addParam(date_end); conditions.push(`${prefix}date <= ${p}`); }
 		if (is_read !== undefined) { const p = addParam(is_read ? 1 : 0); conditions.push(`${prefix}read = ${p}`); }
@@ -881,6 +914,13 @@ export class MailboxDO extends DurableObject<Env> {
 				raw_headers: email.raw_headers ?? null,
 			})
 			.run();
+
+		this.ctx.storage.sql.exec(
+			`UPDATE emails SET search_norm = ?1, subject_norm = ?2 WHERE id = ?3`,
+			buildSearchNorm(email),
+			foldText(email.subject),
+			email.id,
+		);
 
 		if (attachments.length > 0) {
 			this.db.insert(schema.attachments).values(attachments).run();

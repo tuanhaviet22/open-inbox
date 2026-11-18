@@ -1,1 +1,56 @@
-{}
+{
+  "titles": {
+    "editDraft": "Edit Draft",
+    "reply": "Reply",
+    "replyAll": "Reply All",
+    "forward": "Forward",
+    "new": "New Message"
+  },
+  "fields": {
+    "to": "To",
+    "cc": "CC",
+    "bcc": "BCC",
+    "ccBcc": "CC / BCC",
+    "subject": "Subject",
+    "message": "Message"
+  },
+  "placeholders": {
+    "recipients": "recipient@example.com, another@example.com",
+    "recipient": "recipient@example.com",
+    "addressList": "Separate multiple addresses with commas",
+    "subject": "Email subject"
+  },
+  "actions": {
+    "discard": "Discard",
+    "saveDraft": "Save as Draft",
+    "saving": "Saving...",
+    "sending": "Sending...",
+    "closeCompose": "Close compose"
+  },
+  "errors": {
+    "noMailbox": "No mailbox selected.",
+    "noRecipient": "Add at least one recipient.",
+    "saveDraftFailed": "Failed to save draft.",
+    "sendFailed": "Failed to send email."
+  },
+  "toasts": {
+    "draftSaved": "Draft saved!",
+    "sending": "Sending email...",
+    "sent": "Email sent!"
+  },
+  "editor": {
+    "bold": "Bold",
+    "italic": "Italic",
+    "underline": "Underline",
+    "strikethrough": "Strikethrough",
+    "bulletList": "Bullet list",
+    "numberedList": "Numbered list",
+    "blockquote": "Blockquote",
+    "link": "Link",
+    "removeLink": "Remove link",
+    "horizontalRule": "Horizontal rule",
+    "undo": "Undo",
+    "redo": "Redo",
+    "linkPrompt": "URL"
+  }
+}

@@ -168,4 +168,13 @@ export const mailboxMigrations: Migration[] = [
             CREATE INDEX IF NOT EXISTS idx_emails_folder_date ON emails(folder_id, date DESC);
         `,
 	},
+	{
+		// Accent/case-folded copies used by search (see shared/text.ts). Existing
+		// rows are backfilled by MailboxDO on startup because folding needs JS.
+		name: "9_add_search_columns",
+		sql: `
+            ALTER TABLE emails ADD COLUMN search_norm TEXT;
+            ALTER TABLE emails ADD COLUMN subject_norm TEXT;
+        `,
+	},
 ];

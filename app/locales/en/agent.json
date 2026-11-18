@@ -1,1 +1,63 @@
-{}
+{
+  "tabs": {
+    "agent": "Agent",
+    "mcp": "MCP"
+  },
+  "sidebar": {
+    "loading": "Loading agent...",
+    "loadError": "Failed to load agent panel"
+  },
+  "panel": {
+    "connecting": "Connecting...",
+    "connectError": "Failed to connect to agent. Reload to retry.",
+    "title": "Email Agent",
+    "badge": "AI",
+    "clearChat": "Clear chat",
+    "clearConfirm": "Clear chat history?",
+    "intro": "I can read emails, search conversations, and draft replies.",
+    "thinking": "Thinking...",
+    "stop": "Stop generating",
+    "placeholder": "Ask your email agent...",
+    "inputLabel": "Chat message input",
+    "sendLabel": "Send message",
+    "editAndSend": "Edit & send in composer",
+    "editDraftPrompt": "Let me edit this draft first. Show me what you have so I can modify it."
+  },
+  "suggestions": {
+    "latest": "Show me the latest inbox emails",
+    "unread": "Any unread emails?",
+    "draft": "Draft a response to the latest email"
+  },
+  "toolLabels": {
+    "list_emails": "Fetching emails",
+    "get_email": "Reading email",
+    "get_thread": "Loading thread",
+    "search_emails": "Searching",
+    "draft_email": "Drafting email",
+    "draft_reply": "Drafting reply",
+    "discard_draft": "Discarding draft",
+    "mark_email_read": "Updating status",
+    "move_email": "Moving email"
+  },
+  "mcp": {
+    "copy": "Copy",
+    "copied": "Copied!",
+    "copyLabel": "Copy to clipboard",
+    "title": "Connect via MCP",
+    "intro": "This email agent exposes an MCP server so AI coding assistants can manage your inbox directly — read emails, search, draft replies, and send messages using natural language.",
+    "serverUrl": "Server URL",
+    "availableTools": "Available Tools",
+    "tools": {
+      "list_mailboxes": "List all mailboxes",
+      "list_emails": "List emails in a folder",
+      "get_email": "Read a full email with body",
+      "get_thread": "Load a conversation thread",
+      "search_emails": "Search emails by query",
+      "draft_reply": "Draft a reply to an email",
+      "send_reply": "Send a reply",
+      "send_email": "Send a new email",
+      "mark_email_read": "Mark email as read/unread",
+      "move_email": "Move email to a folder"
+    }
+  }
+}
