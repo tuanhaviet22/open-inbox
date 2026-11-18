@@ -63,7 +63,7 @@ function mcpResult(result: Record<string, unknown>) {
  */
 export class EmailMCP extends McpAgent<Env> {
 	server = new McpServer({
-		name: "agentic-inbox",
+		name: "open-inbox",
 		version: "1.0.0",
 	});
 
