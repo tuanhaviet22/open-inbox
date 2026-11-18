@@ -2,6 +2,7 @@
 // Licensed under the Apache 2.0 license found in the LICENSE file or at:
 //     https://opensource.org/licenses/Apache-2.0
 
+import { useTranslation } from "react-i18next";
 import EmailAttachmentList from "~/components/EmailAttachmentList";
 import EmailIframe from "~/components/EmailIframe";
 import { formatDetailDate, rewriteInlineImages } from "~/lib/utils";
@@ -18,6 +19,7 @@ export default function SingleMessageView({
 	mailboxId,
 	onPreviewImage,
 }: SingleMessageViewProps) {
+	const { t, i18n } = useTranslation("mailbox");
 	return (
 		<div className="flex flex-col h-full">
 			<div className="px-4 py-4 border-b border-kumo-line md:px-6">
@@ -30,11 +32,11 @@ export default function SingleMessageView({
 							<div className="text-sm font-medium text-kumo-default truncate">
 								{email.sender}
 							</div>
-							<div className="text-xs text-kumo-subtle">To: {email.recipient}</div>
+							<div className="text-xs text-kumo-subtle">{t("panel.to", { recipient: email.recipient })}</div>
 						</div>
 					</div>
 					<span className="text-xs text-kumo-subtle shrink-0">
-						{formatDetailDate(email.date)}
+						{formatDetailDate(email.date, i18n.language)}
 					</span>
 				</div>
 			</div>

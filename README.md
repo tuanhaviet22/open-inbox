@@ -1,13 +1,15 @@
 <div align="center">
-  <h1>Agentic Inbox</h1>
+  <h1>Open Inbox</h1>
   <p><em>A self-hosted email client with an AI agent, running entirely on Cloudflare Workers</em></p>
 </div>
 
-Agentic Inbox lets you send, receive, and manage emails through a modern web interface -- all powered by your own Cloudflare account. Incoming emails arrive via [Cloudflare Email Routing](https://developers.cloudflare.com/email-routing/), each mailbox is isolated in its own [Durable Object](https://developers.cloudflare.com/durable-objects/) with a SQLite database, and attachments are stored in [R2](https://developers.cloudflare.com/r2/).
+> Open Inbox is a fork of [cloudflare/agentic-inbox](https://github.com/cloudflare/agentic-inbox) (Apache-2.0).
+
+Open Inbox lets you send, receive, and manage emails through a modern web interface -- all powered by your own Cloudflare account. Incoming emails arrive via [Cloudflare Email Routing](https://developers.cloudflare.com/email-routing/), each mailbox is isolated in its own [Durable Object](https://developers.cloudflare.com/durable-objects/) with a SQLite database, and attachments are stored in [R2](https://developers.cloudflare.com/r2/).
 
 An **AI-powered Email Agent** can read your inbox, search conversations, and draft replies -- built with the [Cloudflare Agents SDK](https://developers.cloudflare.com/agents/) and [Workers AI](https://developers.cloudflare.com/workers-ai/).
 
-![Agentic Inbox screenshot](./demo_app.png)
+![Open Inbox screenshot](./demo_app.png)
 
 
 Read the blog post to learn more about Cloudflare Email Service and how to use it with the Agents SDK, MCP, and from the Wrangler CLI: [Email for Agents](https://blog.cloudflare.com/email-for-agents/).
@@ -21,7 +23,7 @@ https://github.com/cloudflare/agentic-inbox/issues/4#issuecomment-4269118513
 
 1. Deploy to Cloudflare. The deploy flow will automatically provision R2, Durable Objects, and Workers AI. You'll be prompted for **DOMAINS**, which is the domain (yourdomain.com) you want to receive emails for (email@yourdomain.com).
 
-     [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/agentic-inbox)
+     [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tuanhaviet22/open-inbox)
 
 2. **Configure Cloudflare Access** -- Enable [one-click Cloudflare Access](https://developers.cloudflare.com/changelog/post/2025-10-03-one-click-access-for-workers/) on your Worker under Settings > Domains & Routes. The modal will show your `POLICY_AUD` and `TEAM_DOMAIN` values. `TEAM_DOMAIN` can be either your Access team URL or the full `.../cdn-cgi/access/certs` URL. **You must set these as secrets for your Worker.**
 3. **Set up Email Routing** -- In the Cloudflare dashboard, go to your domain > Email Routing and create a catch-all rule that forwards to this Worker
@@ -60,7 +62,7 @@ npm run dev
 ### Configuration
 
 1. Set your domain in `wrangler.jsonc`
-2. Create an R2 bucket named `agentic-inbox`: `wrangler r2 bucket create agentic-inbox`
+2. Create an R2 bucket named `open-inbox`: `wrangler r2 bucket create open-inbox`
 
 ### Deploy
 
@@ -76,7 +78,35 @@ npm run deploy
 - [Workers AI](https://developers.cloudflare.com/workers-ai/) enabled (for the agent)
 - [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) configured for deployed/shared environments (required in production)
 
-Any user who passes the shared Cloudflare Access policy can access all mailboxes in this app by design. This includes the MCP server at `/mcp` -- external AI tools (Claude Code, Cursor, etc.) connected via MCP can operate on any mailbox by passing a `mailboxId` parameter. There is no per-mailbox authorization; the Cloudflare Access policy is the single trust boundary.
+### Access model
+
+By default (`ADMIN_EMAILS` empty) any user who passes the shared Cloudflare Access policy can access all mailboxes, including through the MCP server at `/mcp`.
+
+To enable per-mailbox authorization, set `ADMIN_EMAILS` (comma-separated) in `wrangler.jsonc` or as a secret. Then:
+
+- Identity comes from the `email` claim of the Access JWT (locally, `DEV_USER_EMAIL`, default `dev@localhost`).
+- Admins can see every mailbox and create new ones. Each mailbox has **owners** (manage settings and members) and **members** (read and send).
+- The rules apply to the web API, the agent WebSocket (`/agents/*`) and MCP. Users without access get a 404.
+- Owners manage members from the mailbox Settings page.
+
+## Outbound providers
+
+Mail is sent through the Cloudflare `send_email` binding by default. To use another service, set `OUTBOUND_WEBHOOK_URL` (and optionally the `OUTBOUND_WEBHOOK_SECRET` secret): Open Inbox will POST each outgoing message as JSON (`to`, `from`, `subject`, `html`, `text`, `attachments`, ...) with `Authorization: Bearer <secret>` and expects a 2xx reply, optionally `{ "messageId": "..." }`. Workers cannot open raw SMTP/IMAP connections, so an HTTP relay you host (SMTP bridge, SES, Postmark, ...) is the supported way. Receiving is still done by Cloudflare Email Routing.
+
+## Labels and filters
+
+Each mailbox has labels (color-coded, toggled on an email from the reading pane) and filter rules in Settings. A rule matches new incoming mail on sender, recipient, subject or text, and can add a label, move to a folder, mark as read or star. The agent auto-draft is skipped when a rule moves the mail out of the inbox.
+
+## Internationalization
+
+The UI ships in English and Vietnamese. The language is chosen from the `lang` cookie (set by the language switcher), then `Accept-Language`, then English. Text that goes into outgoing mail (quote headers, forward blocks) follows the mailbox's *Language of outgoing email* setting.
+
+To add a language:
+
+1. Add the code to `SUPPORTED_LOCALES` and `LOCALE_NAMES` in `shared/locales.ts`.
+2. Copy `app/locales/en/` to `app/locales/<code>/` and translate the JSON files.
+3. Add the language to `shared/mail-strings.ts`.
+4. Run `npm test`: a test checks every language has the same keys as English.
 
 ## Architecture
 

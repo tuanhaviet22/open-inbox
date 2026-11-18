@@ -5,4 +5,9 @@
 export interface Env extends Cloudflare.Env {
 	POLICY_AUD: string;
 	TEAM_DOMAIN: string;
+	/** Identity used for local development, where there is no Access JWT. */
+	DEV_USER_EMAIL?: string;
+	/** Optional HTTPS relay used instead of the Cloudflare send_email binding. */
+	OUTBOUND_WEBHOOK_URL?: string;
+	OUTBOUND_WEBHOOK_SECRET?: string;
 }

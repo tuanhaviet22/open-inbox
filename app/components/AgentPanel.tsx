@@ -22,44 +22,36 @@ import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useTranslation } from "react-i18next";
 import { useUIStore } from "~/hooks/useUIStore";
 import type { UIMessage } from "ai";
 
-const TOOL_LABELS: Record<string, { label: string; icon: React.ReactNode }> = {
+const TOOL_ICONS: Record<string, { icon: React.ReactNode }> = {
 	list_emails: {
-		label: "Fetching emails",
 		icon: <EnvelopeSimpleIcon size={14} weight="bold" />,
 	},
 	get_email: {
-		label: "Reading email",
 		icon: <EyeIcon size={14} weight="bold" />,
 	},
 	get_thread: {
-		label: "Loading thread",
 		icon: <ArrowBendUpLeftIcon size={14} weight="bold" />,
 	},
 	search_emails: {
-		label: "Searching",
 		icon: <MagnifyingGlassIcon size={14} weight="bold" />,
 	},
 	draft_email: {
-		label: "Drafting email",
 		icon: <PaperPlaneTiltIcon size={14} weight="bold" />,
 	},
 	draft_reply: {
-		label: "Drafting reply",
 		icon: <PaperPlaneTiltIcon size={14} weight="bold" />,
 	},
 	discard_draft: {
-		label: "Discarding draft",
 		icon: <TrashIcon size={14} weight="bold" />,
 	},
 	mark_email_read: {
-		label: "Updating status",
 		icon: <CheckCircleIcon size={14} weight="bold" />,
 	},
 	move_email: {
-		label: "Moving email",
 		icon: <EnvelopeSimpleIcon size={14} weight="bold" />,
 	},
 };
@@ -71,8 +63,8 @@ function ToolCallBadge({
 	toolName: string;
 	state: string;
 }) {
-	const info = TOOL_LABELS[toolName] || {
-		label: toolName,
+	const { t } = useTranslation("agent");
+	const info = TOOL_ICONS[toolName] || {
 		icon: <WrenchIcon size={14} weight="bold" />,
 	};
 	const isDone =
@@ -83,7 +75,7 @@ function ToolCallBadge({
 	return (
 		<div className="flex items-center gap-1.5 py-1 px-2 rounded bg-kumo-fill/50 text-xs">
 			<span className="text-kumo-brand">{info.icon}</span>
-			<span className="text-kumo-strong">{info.label}</span>
+			<span className="text-kumo-strong">{TOOL_ICONS[toolName] ? t(`toolLabels.${toolName}`) : toolName}</span>
 			{isDone ? (
 				<CheckCircleIcon
 					size={12}
@@ -117,6 +109,7 @@ function DraftActions({
 	onEdit: () => void;
 	disabled: boolean;
 }) {
+	const { t } = useTranslation("agent");
 	return (
 		<div className="flex gap-1.5 mt-1">
 			<Button
@@ -126,7 +119,7 @@ function DraftActions({
 				onClick={onEdit}
 				disabled={disabled}
 			>
-				Edit & send in composer
+				{t("panel.editAndSend")}
 			</Button>
 		</div>
 	);
@@ -306,6 +299,7 @@ function AgentChatConnected({
 	const inputRef = useRef<HTMLTextAreaElement>(null);
 	const [inputValue, setInputValue] = useState("");
 	const { startCompose } = useUIStore();
+		const { t } = useTranslation("agent");
 
 	const agent = useAgent({ agent: "EmailAgent", name: mailboxId });
 	const { messages, sendMessage, status, setMessages, stop } =
@@ -337,36 +331,36 @@ function AgentChatConnected({
 	};
 
 	const suggestedPrompts = [
-		"Show me the latest inbox emails",
-		"Any unread emails?",
-		"Draft a response to the latest email",
-	];
+			t("suggestions.latest"),
+			t("suggestions.unread"),
+			t("suggestions.draft"),
+		];
 
 	return (
 		<div className="flex flex-col h-full">
 			{/* Header */}
 			<div className="flex items-center justify-between px-3 py-1.5 border-b border-kumo-line shrink-0">
 				<div className="flex items-center gap-2">
-					<Badge variant="beta">AI</Badge>
+					<Badge variant="beta">{t("panel.badge")}</Badge>
 					<span className="text-xs text-kumo-subtle">
-						Email Agent
+						{t("panel.title")}
 					</span>
 				</div>
 				<div className="flex items-center gap-1">
 					{isStreaming && <Loader size="sm" />}
 					{messages.length > 0 && (
-						<Tooltip content="Clear chat" asChild>
+						<Tooltip content={t("panel.clearChat")} asChild>
 							<Button
 								variant="ghost"
 								shape="square"
 								size="sm"
 								icon={<TrashIcon size={14} />}
 								onClick={() => {
-									if (window.confirm("Clear chat history?")) {
+									if (window.confirm(t("panel.clearConfirm"))) {
 										setMessages([]);
 									}
 								}}
-								aria-label="Clear chat"
+								aria-label={t("panel.clearChat")}
 							/>
 						</Tooltip>
 					)}
@@ -446,7 +440,7 @@ function AgentChatConnected({
 											});
 										} else {
 											sendMessage({
-												text: "Let me edit this draft first. Show me what you have so I can modify it.",
+												text: t("panel.editDraftPrompt"),
 											});
 										}
 									}
@@ -461,7 +455,7 @@ function AgentChatConnected({
 								<div className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-kumo-elevated border border-kumo-line rounded-bl-sm">
 									<Loader size="sm" />
 									<span className="text-xs text-kumo-subtle">
-										Thinking...
+										{t("panel.thinking")}
 									</span>
 								</div>
 							</div>
@@ -480,7 +474,7 @@ function AgentChatConnected({
 							icon={<StopIcon size={14} weight="fill" />}
 							onClick={() => stop()}
 						>
-							Stop generating
+							{t("panel.stop")}
 						</Button>
 					</div>
 				) : (
@@ -492,9 +486,9 @@ function AgentChatConnected({
 							value={inputValue}
 							onChange={(e) => setInputValue(e.target.value)}
 							onKeyDown={handleKeyDown}
-							placeholder="Ask your email agent..."
+							placeholder={t("panel.placeholder")}
 							rows={1}
-							aria-label="Chat message input"
+							aria-label={t("panel.inputLabel")}
 							className="flex-1 resize-none rounded-lg border border-kumo-line bg-kumo-control px-3 py-2 text-xs text-kumo-default placeholder:text-kumo-subtle focus:outline-none focus:ring-1 focus:ring-kumo-ring min-h-[36px] max-h-[100px]"
 							style={{ height: "auto", overflow: "hidden" }}
 							onInput={(e) => {
@@ -512,7 +506,7 @@ function AgentChatConnected({
 							disabled={!inputValue.trim()}
 							icon={<ArrowUpIcon size={14} weight="bold" />}
 							onClick={handleSend}
-							aria-label="Send message"
+							aria-label={t("panel.sendLabel")}
 						/>
 					</div>
 				)}
@@ -522,6 +516,7 @@ function AgentChatConnected({
 }
 
 export default function AgentPanel() {
+	const { t } = useTranslation("agent");
 	const { mailboxId } = useParams<{ mailboxId: string }>();
 	const [hooks, setHooks] = useState<{
 		useAgent: typeof import("agents/react").useAgent;
@@ -541,7 +536,7 @@ export default function AgentPanel() {
 			}),
 		).catch((err) => {
 			console.error("Failed to load agent modules:", err);
-			setLoadError("Failed to connect to agent. Reload to retry.");
+			setLoadError(t("panel.connectError"));
 		});
 	}, []);
 

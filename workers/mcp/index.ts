@@ -19,9 +19,13 @@ import {
 	toolSendEmail,
 	toolMarkEmailRead,
 	toolMoveEmail,
+	toolListLabels,
+	toolSetEmailLabel,
 } from "../lib/tools";
 import { Folders, FOLDER_TOOL_DESCRIPTION, MOVE_FOLDER_TOOL_DESCRIPTION } from "../../shared/folders";
 import type { Env } from "../types";
+import { filterVisibleMailboxes, getMailboxRole, hasRole } from "../lib/auth";
+import { normalizeMailboxId } from "../lib/mailbox";
 
 /** Wrap a plain result object into MCP content format. */
 function mcpText(result: unknown) {
@@ -61,9 +65,9 @@ function mcpResult(result: Record<string, unknown>) {
  * `/mcp` endpoint and can list mailboxes, read/search emails,
  * draft replies, send messages, and manage folders.
  */
-export class EmailMCP extends McpAgent<Env> {
+export class EmailMCP extends McpAgent<Env, unknown, { userEmail?: string }> {
 	server = new McpServer({
-		name: "agentic-inbox",
+		name: "open-inbox",
 		version: "1.0.0",
 	});
 
@@ -74,9 +78,14 @@ export class EmailMCP extends McpAgent<Env> {
 		 * Verify a mailbox exists in R2 before operating on it.
 		 * Returns an MCP error response if the mailbox is not found, or null if valid.
 		 */
-		const verifyMailbox = async (mailboxId: string) => {
+		// Identity is passed by workers/app.ts; missing identity gets no access.
+		const userEmail = () => this.props?.userEmail ?? "";
+
+		const verifyMailbox = async (rawMailboxId: string) => {
+			const mailboxId = normalizeMailboxId(rawMailboxId);
 			const obj = await env.BUCKET.head(`mailboxes/${mailboxId}.json`);
-			if (!obj) {
+			const role = obj ? await getMailboxRole(env, mailboxId, userEmail()) : null;
+			if (!obj || !hasRole(role, "member")) {
 				return mcpError(`Mailbox "${mailboxId}" not found. Use list_mailboxes to see available mailboxes.`);
 			}
 			return null;
@@ -88,7 +97,7 @@ export class EmailMCP extends McpAgent<Env> {
 			"List all available mailboxes",
 			{},
 			async () => {
-				const result = await toolListMailboxes(env);
+				const result = await filterVisibleMailboxes(env, userEmail(), await toolListMailboxes(env));
 				return mcpText(result);
 			},
 		);
@@ -397,6 +406,35 @@ export class EmailMCP extends McpAgent<Env> {
 				if (denied) return denied;
 				const result = await toolMarkEmailRead(env, mailboxId, emailId, read);
 				return mcpText(result);
+			},
+		);
+
+		// ── list_labels ────────────────────────────────────────────
+		this.server.tool(
+			"list_labels",
+			"List the labels defined in a mailbox (id, name, color).",
+			{ mailboxId: z.string().describe("The mailbox email address") },
+			async ({ mailboxId }) => {
+				const denied = await verifyMailbox(mailboxId);
+				if (denied) return denied;
+				return mcpText(await toolListLabels(env, mailboxId));
+			},
+		);
+
+		// ── label_email ────────────────────────────────────────────
+		this.server.tool(
+			"label_email",
+			"Add or remove a label on an email. Use list_labels to find label ids.",
+			{
+				mailboxId: z.string().describe("The mailbox email address"),
+				emailId: z.string().describe("The email ID"),
+				labelId: z.string().describe("The label ID"),
+				action: z.enum(["add", "remove"]).default("add"),
+			},
+			async ({ mailboxId, emailId, labelId, action }) => {
+				const denied = await verifyMailbox(mailboxId);
+				if (denied) return denied;
+				return mcpResult(await toolSetEmailLabel(env, mailboxId, emailId, labelId, action));
 			},
 		);
 

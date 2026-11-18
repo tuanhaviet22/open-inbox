@@ -11,6 +11,7 @@
  * Zod schemas: used across route handlers to eliminate duplication.
  */
 import { z } from "zod";
+import { SUPPORTED_LOCALES } from "../../shared/locales";
 
 // ── TypeScript Interfaces ──────────────────────────────────────────
 
@@ -93,3 +94,55 @@ export const SendEmailResponseSchema = z.object({
 	id: z.string(),
 	status: z.string(),
 });
+
+// ── Request body schemas ───────────────────────────────────────────
+
+export const MailboxSettingsSchema = z
+	.object({
+		fromName: z.string().max(200).optional(),
+		forwarding: z.object({ enabled: z.boolean(), email: z.string().max(320) }).optional(),
+		signature: z
+			.object({ enabled: z.boolean(), text: z.string().max(10_000), html: z.string().max(50_000).optional() })
+			.optional(),
+		autoReply: z
+			.object({ enabled: z.boolean(), subject: z.string().max(500), message: z.string().max(10_000) })
+			.optional(),
+		agentSystemPrompt: z.string().max(10_000).optional(),
+		/** Language of text added to outgoing mail (quote headers etc.). */
+		locale: z.enum(SUPPORTED_LOCALES).optional(),
+	});
+
+export const CreateMailboxBodySchema = z.object({
+	email: z.string().email(),
+	name: z.string().min(1).max(200),
+	settings: MailboxSettingsSchema.partial().optional(),
+	/** Initial owner when authorization is enabled; defaults to the creator. */
+	owner: z.string().email().optional(),
+});
+
+export const SetMemberBodySchema = z.object({
+	email: z.string().email(),
+	role: z.enum(["owner", "member"]),
+});
+
+export const UpdateMailboxBodySchema = z.object({ settings: MailboxSettingsSchema });
+
+export const UpdateEmailBodySchema = z.object({
+	read: z.boolean().optional(),
+	starred: z.boolean().optional(),
+});
+
+export const MoveEmailBodySchema = z.object({ folderId: z.string().min(1) });
+
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Expected a #rrggbb color");
+
+export const LabelBodySchema = z.object({
+	name: z.string().trim().min(1).max(50),
+	color: hexColor.optional(),
+});
+
+export const UpdateLabelBodySchema = LabelBodySchema.partial();
+
+export const EmailLabelBodySchema = z.object({ labelId: z.string().min(1) });
+
+export const FolderNameBodySchema = z.object({ name: z.string().trim().min(1).max(100) });

@@ -13,6 +13,7 @@ import type { EmailFull } from "./schemas";
 import { Folders } from "../../shared/folders";
 import type { Env } from "../types";
 import { formatQuotedDate } from "../../shared/dates";
+import { formatQuotedHeader } from "../../shared/mail-strings";
 
 // ── DO Stub ────────────────────────────────────────────────────────
 
@@ -202,12 +203,14 @@ export function buildQuotedReplyBlock(original: {
 	date?: string;
 	sender?: string;
 	body?: string;
+	/** Mailbox locale; selects the language of the "wrote:" header. */
+	locale?: string | null;
 }): string {
 	if (!original.body) return "";
 	
 	// HTML-escape sender and date to prevent injection
 	const originalSender = escapeHtml(original.sender || "unknown");
-	const originalDate = escapeHtml(formatEmailDate(original.date || ""));
+	const originalDate = escapeHtml(formatQuotedDate(original.date || "", original.locale));
 
 	// Sanitize the body to plain text to prevent stored XSS.
 	// The original HTML renders safely in the sandboxed iframe, but quoted
@@ -216,7 +219,7 @@ export function buildQuotedReplyBlock(original: {
 	const plainBody = stripHtmlToText(original.body);
 	const bodyToQuote = escapeHtml(plainBody).replace(/\n/g, "<br>");
 
-	return `<br><blockquote style="border-left: 2px solid #ccc; margin: 0; padding-left: 1em; color: #666;">On ${originalDate}, ${originalSender} wrote:<br><br>${bodyToQuote}</blockquote>`;
+	return `<br><blockquote style="border-left: 2px solid #ccc; margin: 0; padding-left: 1em; color: #666;">${formatQuotedHeader(original.locale, originalDate, originalSender)}<br><br>${bodyToQuote}</blockquote>`;
 }
 
 // ── Tool Logic (getFullEmail / getFullThread) ──────────────────────

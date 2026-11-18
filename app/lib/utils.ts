@@ -10,6 +10,7 @@
  */
 import DOMPurify from "dompurify";
 import { formatQuotedDate } from "shared/dates";
+import { formatQuotedHeader } from "shared/mail-strings";
 import type { Attachment } from "~/types";
 
 export {
@@ -155,9 +156,10 @@ export function buildQuotedReplyBlock(
 	dateStr: string | undefined,
 	sender: string,
 	body: string,
+	locale?: string | null,
 ): string {
 	if (!body) return "";
-	const formattedDate = formatComposeDate(dateStr);
+	const formattedDate = formatQuotedDate(dateStr, locale);
 	
 	// HTML-escape sender to prevent <john@example.com> from disappearing as a tag
 	const escapedSender = escapeHtml(sender);
@@ -168,7 +170,7 @@ export function buildQuotedReplyBlock(
 	// execute. Convert to escaped plain text instead.
 	const bodyToQuote = escapeHtml(stripHtml(body)).replace(/\n/g, "<br>");
 
-	return `<br><blockquote style="border-left: 2px solid #ccc; margin: 0; padding-left: 1em; color: #666;">On ${formattedDate}, ${escapedSender} wrote:<br><br>${bodyToQuote}</blockquote>`;
+	return `<br><blockquote style="border-left: 2px solid #ccc; margin: 0; padding-left: 1em; color: #666;">${formatQuotedHeader(locale, formattedDate, escapedSender)}<br><br>${bodyToQuote}</blockquote>`;
 }
 
 /**

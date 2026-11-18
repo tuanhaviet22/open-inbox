@@ -14,6 +14,8 @@ export interface MailboxSettings {
 	signature?: SignatureSettings;
 	autoReply?: { enabled: boolean; subject: string; message: string };
 	agentSystemPrompt?: string;
+	/** Language of text added to outgoing mail; falls back to the UI language. */
+	locale?: string;
 }
 
 export interface Mailbox {
@@ -64,3 +66,39 @@ export interface Folder {
 	name: string;
 	unreadCount: number;
 }
+
+export interface Member {
+	email: string;
+	role: "owner" | "member";
+}
+
+export interface Label {
+	id: string;
+	name: string;
+	color: string;
+}
+
+export interface FilterConditions {
+	from?: string;
+	to?: string;
+	subject?: string;
+	contains?: string;
+}
+
+export interface FilterActions {
+	labelId?: string;
+	moveTo?: string;
+	markRead?: boolean;
+	star?: boolean;
+}
+
+export interface FilterRule {
+	id: string;
+	name: string;
+	enabled: boolean;
+	conditions: FilterConditions;
+	actions: FilterActions;
+	position: number;
+}
+
+export type FilterRuleInput = Omit<FilterRule, "id" | "position">;

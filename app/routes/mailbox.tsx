@@ -3,6 +3,7 @@
 //     https://opensource.org/licenses/Apache-2.0
 
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Outlet, useParams } from "react-router";
 import AgentSidebar from "~/components/AgentSidebar";
 import ComposeEmail from "~/components/ComposeEmail";
@@ -12,6 +13,7 @@ import { useMailbox } from "~/queries/mailboxes";
 import { useUIStore } from "~/hooks/useUIStore";
 
 export default function MailboxRoute() {
+	const { t } = useTranslation("settings");
 	const { mailboxId } = useParams<{ mailboxId: string }>();
 	// Prefetch mailbox data for child components
 	useMailbox(mailboxId);
@@ -48,7 +50,7 @@ export default function MailboxRoute() {
 					onKeyDown={(e) => e.key === "Escape" && closeSidebar()}
 					role="button"
 					tabIndex={-1}
-					aria-label="Close sidebar"
+					aria-label={t("mailbox.closeSidebar")}
 				/>
 			)}
 

@@ -27,7 +27,7 @@ import {
 	buildThreadingHeaders,
 } from "./email-helpers";
 import { verifyDraft } from "./ai";
-import { sendEmail } from "../email-sender";
+import { getEmailProvider } from "../email-sender";
 import { Folders } from "../../shared/folders";
 import type { Env } from "../types";
 
@@ -47,6 +47,17 @@ type RateLimitStub = {
 
 export async function toolListMailboxes(env: Env) {
 	return listMailboxes(env.BUCKET);
+}
+
+/** Locale from the mailbox settings (R2), used for text that goes into outgoing mail. */
+export async function getMailboxLocale(env: Env, mailboxId: string): Promise<string | null> {
+	try {
+		const obj = await env.BUCKET.get(`mailboxes/${mailboxId}.json`);
+		const settings = obj ? ((await obj.json()) as { locale?: string }) : null;
+		return settings?.locale ?? null;
+	} catch {
+		return null;
+	}
 }
 
 // ── list_emails ────────────────────────────────────────────────────
@@ -160,6 +171,7 @@ export async function toolDraftReply(
 				date: original.date,
 				sender: original.sender || params.to,
 				body: original.body ?? undefined,
+				locale: await getMailboxLocale(env, mailboxId),
 			})
 		: "";
 	const bodyHtml = processedBody + quotedBlock;
@@ -354,6 +366,29 @@ export async function toolMoveEmail(
 	return { error: "Failed to move email" };
 }
 
+// ── labels ─────────────────────────────────────────────────────────
+
+export async function toolListLabels(env: Env, mailboxId: string) {
+	return getMailboxStub(env, mailboxId).listLabels();
+}
+
+export async function toolSetEmailLabel(
+	env: Env,
+	mailboxId: string,
+	emailId: string,
+	labelId: string,
+	action: "add" | "remove",
+) {
+	const stub = getMailboxStub(env, mailboxId);
+	if (action === "remove") {
+		await stub.removeEmailLabel(emailId, labelId);
+		return { status: "unlabeled", emailId, labelId };
+	}
+	return (await stub.addEmailLabel(emailId, labelId))
+		? { status: "labeled", emailId, labelId }
+		: { error: "Email or label not found" };
+}
+
 // ── discard_draft ──────────────────────────────────────────────────
 
 export async function toolDiscardDraft(
@@ -430,11 +465,12 @@ export async function toolSendReply(
 		date: originalEmail.date,
 		sender: originalEmail.sender || params.to,
 		body: originalEmail.body ?? undefined,
+		locale: await getMailboxLocale(env, mailboxId),
 	});
 	const fullBodyHtml = sanitizedBody + quotedBlock;
 
 	try {
-		await sendEmail(env.EMAIL, {
+		await getEmailProvider(env).send({
 			to: params.to,
 			from: mailboxId,
 			subject: params.subject,
@@ -499,7 +535,7 @@ export async function toolSendEmail(
 	}
 
 	try {
-		await sendEmail(env.EMAIL, {
+		await getEmailProvider(env).send({
 			to: params.to,
 			from: mailboxId,
 			subject: params.subject,

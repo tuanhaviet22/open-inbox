@@ -1,0 +1,121 @@
+{
+  "sidebar": {
+    "mailboxes": "Mailboxes",
+    "mailboxFallback": "Mailbox",
+    "compose": "Compose",
+    "folders": "Folders",
+    "newFolder": "New folder",
+    "createFolderAria": "Create new folder",
+    "createFolderTitle": "Create folder",
+    "folderName": "Folder name",
+    "folderPlaceholder": "e.g. Projects",
+    "create": "Create"
+  },
+  "header": {
+    "toggleSidebar": "Toggle sidebar",
+    "searchLabel": "Search emails",
+    "searchPlaceholder": "Search emails... (try from:name, is:unread, has:attachment)",
+    "clearSearch": "Clear search",
+    "search": "Search",
+    "hideAgentPanel": "Hide agent panel",
+    "showAgentPanel": "Show agent panel",
+    "toggleAgentPanel": "Toggle agent panel",
+    "settings": "Settings"
+  },
+  "emailList": {
+    "empty": {
+      "inbox": {
+        "title": "Your inbox is empty",
+        "description": "New emails will appear here when they arrive. Send an email to get the conversation started."
+      },
+      "sent": {
+        "title": "No sent emails",
+        "description": "Emails you send will show up here."
+      },
+      "draft": {
+        "title": "No drafts",
+        "description": "Emails you're still working on will be saved here."
+      },
+      "archive": {
+        "title": "Archive is empty",
+        "description": "Move emails here to keep your inbox clean without deleting them."
+      },
+      "trash": {
+        "title": "Trash is empty",
+        "description": "Deleted emails will appear here. You can restore them or permanently delete them."
+      },
+      "default": {
+        "title": "No emails",
+        "description": "This folder is empty."
+      }
+    },
+    "compose": "Compose",
+    "conversations_one": "{{count}} conversation",
+    "conversations_other": "{{count}} conversations",
+    "refreshing": "Refreshing...",
+    "refresh": "Refresh",
+    "draft": "Draft",
+    "needsReply": "Needs reply",
+    "markRead": "Mark read",
+    "markUnread": "Mark unread",
+    "star": "Star",
+    "unstar": "Unstar",
+    "delete": "Delete",
+    "confirmDelete": "Are you sure you want to delete this email?"
+  },
+  "search": {
+    "backToInbox": "Back to inbox",
+    "title": "Search Results",
+    "results_one": "{{count}} result",
+    "results_other": "{{count}} results",
+    "noResults": "No results found",
+    "nothingMatched": "Nothing matched \"{{query}}\". Try different keywords or check your spelling.",
+    "enterTerm": "Enter a search term to find emails by subject, sender, or content.",
+    "tipPrefix": "Tip: Use operators like",
+    "resultsFor_one": "{{count}} result for \"{{query}}\"",
+    "resultsFor_other": "{{count}} results for \"{{query}}\""
+  },
+  "panel": {
+    "backToList": "Back to list",
+    "sending": "Sending...",
+    "send": "Send",
+    "edit": "Edit",
+    "discard": "Discard",
+    "reply": "Reply",
+    "replyAll": "Reply all",
+    "forward": "Forward",
+    "star": "Star",
+    "unstar": "Unstar",
+    "markUnread": "Mark as unread",
+    "markRead": "Mark as read",
+    "viewSource": "View source",
+    "delete": "Delete",
+    "close": "Close",
+    "moveToFolder": "Move to folder",
+    "moveTo": "Move to",
+    "messagesInThread_one": "{{count}} message in this thread",
+    "messagesInThread_other": "{{count}} messages in this thread",
+    "to": "To: {{recipient}}",
+    "draftReply": "Draft reply",
+    "you": "You",
+    "draft": "Draft",
+    "collapseMessage": "Collapse message",
+    "sourceTitle": "Email Source Headers",
+    "noHeaders": "No header data available for this email.",
+    "downloadOriginal": "Download Original",
+    "emailContent": "Email content",
+    "attachments_one": "{{count}} attachment",
+    "attachments_other": "{{count}} attachments",
+    "confirmDelete": "Are you sure you want to delete this email?",
+    "confirmDiscardDraft": "Discard this draft?",
+    "toast": {
+      "draftDiscarded": "Draft discarded",
+      "noRecipient": "Cannot send: no recipient set on this draft.",
+      "noValidRecipient": "Cannot send: no valid recipient set on this draft.",
+      "sent": "Email sent!",
+      "sendFailed": "Failed to send email."
+    },
+    "noSubject": "(no subject)",
+    "labels": "Labels"
+  }
+}

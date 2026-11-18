@@ -4,10 +4,12 @@
 
 import { useKumoToastManager } from "@cloudflare/kumo";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 import { Folders } from "shared/folders";
 import EmailPanelDialogs from "~/components/email-panel/EmailPanelDialogs";
 import EmailPanelHeader from "~/components/email-panel/EmailPanelHeader";
+import EmailLabels from "~/components/EmailLabels";
 import EmailPanelToolbar from "~/components/email-panel/EmailPanelToolbar";
 import SingleMessageView from "~/components/email-panel/SingleMessageView";
 import ThreadMessage from "~/components/email-panel/ThreadMessage";
@@ -30,6 +32,7 @@ function EmailPanelSkeleton() {
 }
 
 export default function EmailPanel({ emailId }: { emailId: string }) {
+	const { t } = useTranslation("mailbox");
 	const { mailboxId, folder } = useParams<{ mailboxId: string; folder: string }>();
 	const { data: email } = useEmail(mailboxId, emailId) as { data?: Email };
 	const { data: threadRepliesRaw } = useThreadReplies(mailboxId, email?.thread_id) as {
@@ -89,7 +92,7 @@ export default function EmailPanel({ emailId }: { emailId: string }) {
 
 	const toggleStar = () => { if (mailboxId) updateEmail.mutate({ mailboxId, id: email.id, data: { starred: !email.starred } }); };
 	const handleMove = (folderId: string) => { if (mailboxId) { moveEmailMut.mutate({ mailboxId, id: email.id, folderId }); closePanel(); } };
-	const handleDelete = () => { if (mailboxId) { if (!window.confirm("Are you sure you want to delete this email?")) return; deleteEmailMut.mutate({ mailboxId, id: email.id }); closePanel(); } };
+	const handleDelete = () => { if (mailboxId) { if (!window.confirm(t("panel.confirmDelete"))) return; deleteEmailMut.mutate({ mailboxId, id: email.id }); closePanel(); } };
 
 	const handleEditDraft = (draftMsg?: Email) => {
 		const target = draftMsg || email;
@@ -100,9 +103,9 @@ export default function EmailPanel({ emailId }: { emailId: string }) {
 	const handleDeleteDraft = async (draftMsg?: Email) => {
 		const target = draftMsg || email;
 		if (!mailboxId) return;
-		if (!window.confirm("Discard this draft?")) return;
+		if (!window.confirm(t("panel.confirmDiscardDraft"))) return;
 		deleteEmailMut.mutate({ mailboxId, id: target.id });
-		toastManager.add({ title: "Draft discarded" });
+		toastManager.add({ title: t("panel.toast.draftDiscarded") });
 		if (target.id === emailId) closePanel();
 	};
 
@@ -112,9 +115,9 @@ export default function EmailPanel({ emailId }: { emailId: string }) {
 		setIsSending(true);
 		try {
 			if (!target.recipient || !target.subject) { try { const fresh = await api.getEmail(mailboxId, target.id) as Email; if (fresh) target = fresh; } catch {} }
-			if (!target.recipient) { toastManager.add({ title: "Cannot send: no recipient set on this draft.", variant: "error" }); return; }
+			if (!target.recipient) { toastManager.add({ title: t("panel.toast.noRecipient"), variant: "error" }); return; }
 			const toRecipients = splitEmailList(target.recipient);
-			if (toRecipients.length === 0) { toastManager.add({ title: "Cannot send: no valid recipient set on this draft.", variant: "error" }); return; }
+			if (toRecipients.length === 0) { toastManager.add({ title: t("panel.toast.noValidRecipient"), variant: "error" }); return; }
 			const fromName = currentMailbox.settings?.fromName || currentMailbox.name;
 			const from = fromName && fromName !== currentMailbox.email ? { email: currentMailbox.email, name: fromName } : currentMailbox.email;
 			const originalEmail = target.in_reply_to ? allMessages.find((msg) => msg.id === target.in_reply_to) : undefined;
@@ -123,16 +126,16 @@ export default function EmailPanel({ emailId }: { emailId: string }) {
 				cc: toEmailListValue(splitEmailList(target.cc)),
 				bcc: toEmailListValue(splitEmailList(target.bcc)),
 				from,
-				subject: target.subject || "(no subject)",
+				subject: target.subject || t("panel.noSubject"),
 				html: target.body || "",
 				text: target.body ? target.body.replace(/<[^>]*>/g, "").trim() : "",
 			};
 			if (originalEmail) await replyMut.mutateAsync({ mailboxId, emailId: originalEmail.id, email: emailData }); else await sendEmailMut.mutateAsync({ mailboxId, email: emailData });
 			await deleteEmailMut.mutateAsync({ mailboxId, id: target.id });
-			toastManager.add({ title: "Email sent!" });
+			toastManager.add({ title: t("panel.toast.sent") });
 			if (isDraftFolder) closePanel();
 		} catch (err) {
-			const message = (err instanceof Error ? err.message : null) || "Failed to send email.";
+			const message = (err instanceof Error ? err.message : null) || t("panel.toast.sendFailed");
 			toastManager.add({ title: message, variant: "error" });
 		} finally { setIsSending(false); }
 	};
@@ -180,6 +183,8 @@ export default function EmailPanel({ emailId }: { emailId: string }) {
 				messageCount={allMessages.length}
 				showThreadCount={hasThread}
 			/>
+
+			{mailboxId && <EmailLabels mailboxId={mailboxId} emailId={email.id} />}
 
 			<div className="flex-1 overflow-y-auto">
 				{hasThread ? (

@@ -1,11 +1,16 @@
 {
-	"name": "agentic-inbox",
+	"name": "open-inbox",
 	"private": true,
 	"license": "Apache-2.0",
 	"type": "module",
 	"cloudflare": {
-		"label": "Agentic Inbox",
-		"products": ["Workers", "Durable Objects", "R2", "Workers AI"],
+		"label": "Open Inbox",
+		"products": [
+			"Workers",
+			"Durable Objects",
+			"R2",
+			"Workers AI"
+		],
 		"bindings": {
 			"DOMAINS": {
 				"description": "Your domain with [Email Routing](https://developers.cloudflare.com/email-routing/) enabled (e.g. `example.com`). After deploying, create a catch-all Email Routing rule pointing to this Worker."
@@ -18,7 +23,8 @@
 		"deploy": "npm run build && wrangler deploy",
 		"dev": "react-router dev",
 		"preview": "npm run build && vite preview",
-		"typecheck": "npm run cf-typegen && react-router typegen && tsc -b"
+		"typecheck": "npm run cf-typegen && react-router typegen && tsc -b",
+		"test": "vitest run"
 	},
 	"dependencies": {
 		"@cloudflare/ai-chat": "^0.1.8",
@@ -39,11 +45,13 @@
 		"dompurify": "^3.3.3",
 		"drizzle-orm": "^0.45.1",
 		"hono": "^4.7.11",
+		"i18next": "^27.1.5",
 		"isbot": "^5.1.27",
 		"jose": "^6.2.1",
 		"postal-mime": "^2.6.1",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
+		"react-i18next": "^18.0.2",
 		"react-markdown": "^10.1.0",
 		"react-router": "^7.5.3",
 		"remark-gfm": "^4.0.1",
@@ -93,6 +101,7 @@
 		"typescript": "^5.8.3",
 		"vite": "^6.3.3",
 		"vite-tsconfig-paths": "^5.1.4",
+		"vitest": "^3.2.7",
 		"wrangler": "^4.74.0"
 	}
 }

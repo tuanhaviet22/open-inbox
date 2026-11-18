@@ -1,0 +1,33 @@
+{
+  "language": "Ngôn ngữ",
+  "errors": {
+    "generic": {
+      "title": "Đã xảy ra lỗi",
+      "description": "Đã có lỗi không mong muốn. Vui lòng thử lại."
+    },
+    "notFound": {
+      "title": "Không tìm thấy trang",
+      "description": "Trang bạn tìm không tồn tại hoặc đã được di chuyển."
+    },
+    "status": "Lỗi {{status}}",
+    "goHome": "Về trang chủ"
+  },
+  "folders": {
+    "inbox": "Hộp thư đến",
+    "sent": "Đã gửi",
+    "draft": "Thư nháp",
+    "archive": "Lưu trữ",
+    "trash": "Thùng rác",
+    "spam": "Thư rác"
+  },
+  "actions": {
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "delete": "Xóa",
+    "close": "Đóng",
+    "send": "Gửi",
+    "back": "Quay lại",
+    "retry": "Thử lại",
+    "loading": "Đang tải…"
+  }
+}

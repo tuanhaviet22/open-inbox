@@ -2,7 +2,7 @@
 // Licensed under the Apache 2.0 license found in the LICENSE file or at:
 //     https://opensource.org/licenses/Apache-2.0
 
-import type { Email, Folder, Mailbox } from "~/types";
+import type { Email, FilterRule, FilterRuleInput, Folder, Label, Mailbox, Member } from "~/types";
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
@@ -98,6 +98,35 @@ const api = {
 	// Config
 	getConfig: () =>
 		get<{ domains: string[]; emailAddresses: string[] }>("/api/v1/config"),
+
+	// Current user + members
+	getMe: () => get<{ email: string; isAdmin: boolean; authzEnabled: boolean }>("/api/v1/me"),
+	listMembers: (mailboxId: string) =>
+		get<Member[]>(`/api/v1/mailboxes/${mailboxId}/members`),
+	setMember: (mailboxId: string, email: string, role: Member["role"]) =>
+		put<Member>(`/api/v1/mailboxes/${mailboxId}/members`, { email, role }),
+	removeMember: (mailboxId: string, email: string) =>
+		del<void>(`/api/v1/mailboxes/${mailboxId}/members/${encodeURIComponent(email)}`),
+
+	// Labels
+	listLabels: (mailboxId: string) => get<Label[]>(`/api/v1/mailboxes/${mailboxId}/labels`),
+	createLabel: (mailboxId: string, label: { name: string; color?: string }) =>
+		post<Label>(`/api/v1/mailboxes/${mailboxId}/labels`, label),
+	deleteLabel: (mailboxId: string, id: string) => del<void>(`/api/v1/mailboxes/${mailboxId}/labels/${id}`),
+	getEmailLabels: (mailboxId: string, emailId: string) =>
+		get<Label[]>(`/api/v1/mailboxes/${mailboxId}/emails/${emailId}/labels`),
+	addEmailLabel: (mailboxId: string, emailId: string, labelId: string) =>
+		post<void>(`/api/v1/mailboxes/${mailboxId}/emails/${emailId}/labels`, { labelId }),
+	removeEmailLabel: (mailboxId: string, emailId: string, labelId: string) =>
+		del<void>(`/api/v1/mailboxes/${mailboxId}/emails/${emailId}/labels/${labelId}`),
+
+	// Filter rules
+	listFilters: (mailboxId: string) => get<FilterRule[]>(`/api/v1/mailboxes/${mailboxId}/filters`),
+	createFilter: (mailboxId: string, rule: FilterRuleInput) =>
+		post<FilterRule>(`/api/v1/mailboxes/${mailboxId}/filters`, rule),
+	updateFilter: (mailboxId: string, id: string, rule: FilterRuleInput) =>
+		put<FilterRule>(`/api/v1/mailboxes/${mailboxId}/filters/${id}`, rule),
+	deleteFilter: (mailboxId: string, id: string) => del<void>(`/api/v1/mailboxes/${mailboxId}/filters/${id}`),
 
 	// Mailboxes
 	listMailboxes: () => get<Mailbox[]>("/api/v1/mailboxes"),

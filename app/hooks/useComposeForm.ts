@@ -3,11 +3,13 @@
 //     https://opensource.org/licenses/Apache-2.0
 
 import { useKumoToastManager } from "@cloudflare/kumo";
+import { useTranslation } from "react-i18next";
+import { formatQuotedDate } from "shared/dates";
+import { getMailStrings } from "shared/mail-strings";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
 	buildQuotedReplyBlock,
 	escapeHtml,
-	formatComposeDate,
 	getSignatureBlock,
 	htmlToPlainText,
 	splitEmailList,
@@ -62,12 +64,14 @@ function getPrefixedSubject(subject: string, prefix: "Re" | "Fwd") {
 function buildForwardBody(
 	original: NonNullable<ReturnType<typeof useUIStore.getState>["composeOptions"]["originalEmail"]>,
 	sigBlock: string,
+	locale: string,
 ) {
+	const mail = getMailStrings(locale);
 	const safeSender = escapeHtml(original.sender);
 	const safeSubject = escapeHtml(original.subject);
 	const safeBody = escapeHtml(stripHtml(original.body || "")).replace(/\n/g, "<br>");
 
-	return `<p><br></p>${sigBlock ? `${sigBlock}<br>` : ""}<div style="border: 1px solid #ddd; padding: 1em; background-color: #f9f9f9; margin: 1em 0;"><strong>Forwarded message:</strong><br><strong>From:</strong> ${safeSender}<br><strong>Date:</strong> ${formatComposeDate(original.date)}<br><strong>Subject:</strong> ${safeSubject}<br><br>${safeBody}</div>`;
+	return `<p><br></p>${sigBlock ? `${sigBlock}<br>` : ""}<div style="border: 1px solid #ddd; padding: 1em; background-color: #f9f9f9; margin: 1em 0;"><strong>${mail.forwardedLabel}</strong><br><strong>${mail.fromLabel}</strong> ${safeSender}<br><strong>${mail.dateLabel}</strong> ${formatQuotedDate(original.date, locale)}<br><strong>${mail.subjectLabel}</strong> ${safeSubject}<br><br>${safeBody}</div>`;
 }
 
 function buildReplyAllFields(
@@ -108,6 +112,7 @@ function buildInitialComposeFields(
 	composeOptions: ReturnType<typeof useUIStore.getState>["composeOptions"],
 	mailboxEmail: string | undefined,
 	sigBlock: string,
+	locale: string,
 ): ComposeFormFields {
 	const { draftEmail: draft, originalEmail: original, mode } = composeOptions;
 
@@ -134,7 +139,7 @@ function buildInitialComposeFields(
 			...EMPTY_FIELDS,
 			to: original.sender,
 			subject: getPrefixedSubject(original.subject, "Re"),
-			body: `<p><br></p>${sigBlock ? `${sigBlock}<br>` : ""}${buildQuotedReplyBlock(original.date, original.sender, original.body || "")}`,
+			body: `<p><br></p>${sigBlock ? `${sigBlock}<br>` : ""}${buildQuotedReplyBlock(original.date, original.sender, original.body || "", locale)}`,
 		};
 	}
 
@@ -144,7 +149,7 @@ function buildInitialComposeFields(
 			...EMPTY_FIELDS,
 			...recipients,
 			subject: getPrefixedSubject(original.subject, "Re"),
-			body: `<p><br></p>${sigBlock ? `${sigBlock}<br>` : ""}${buildQuotedReplyBlock(original.date, original.sender, original.body || "")}`,
+			body: `<p><br></p>${sigBlock ? `${sigBlock}<br>` : ""}${buildQuotedReplyBlock(original.date, original.sender, original.body || "", locale)}`,
 		};
 	}
 
@@ -152,7 +157,7 @@ function buildInitialComposeFields(
 		return {
 			...EMPTY_FIELDS,
 			subject: getPrefixedSubject(original.subject, "Fwd"),
-			body: buildForwardBody(original, sigBlock),
+			body: buildForwardBody(original, sigBlock, locale),
 		};
 	}
 
@@ -166,6 +171,10 @@ export function useComposeForm(mailboxId?: string, _folder?: string) {
 	const toastManager = useKumoToastManager();
 	const { composeOptions, closePanel, closeCompose } = useUIStore();
 	const { data: currentMailbox } = useMailbox(mailboxId);
+	const { i18n } = useTranslation();
+	const { t } = useTranslation("compose");
+	// Text added to outgoing mail follows the mailbox language, then the UI language.
+	const locale = currentMailbox?.settings?.locale ?? i18n.language;
 	const sendEmailMutation = useSendEmail();
 	const saveDraftMutation = useSaveDraft();
 	const replyMutation = useReplyToEmail();
@@ -185,9 +194,9 @@ export function useComposeForm(mailboxId?: string, _folder?: string) {
 	const isDraftEdit = !!composeOptions.draftEmail;
 
 	const formTitle = useMemo(() => {
-		if (isDraftEdit) return "Edit Draft";
-		switch (composeOptions.mode) { case "reply": return "Reply"; case "reply-all": return "Reply All"; case "forward": return "Forward"; default: return "New Message"; }
-	}, [composeOptions.mode, isDraftEdit]);
+		if (isDraftEdit) return t("titles.editDraft");
+		switch (composeOptions.mode) { case "reply": return t("titles.reply"); case "reply-all": return t("titles.replyAll"); case "forward": return t("titles.forward"); default: return t("titles.new"); }
+	}, [composeOptions.mode, isDraftEdit, t]);
 
 	const sigBlock = useMemo(() => getSignatureBlock(currentMailbox?.settings), [currentMailbox]);
 
@@ -199,6 +208,7 @@ export function useComposeForm(mailboxId?: string, _folder?: string) {
 			composeOptions,
 			currentMailbox?.email,
 			sigBlock,
+			locale,
 		);
 		setError(null);
 		setTo(initialFields.to);
@@ -222,10 +232,10 @@ export function useComposeForm(mailboxId?: string, _folder?: string) {
 				thread_id: composeOptions.originalEmail?.thread_id || composeOptions.draftEmail?.thread_id || undefined,
 				draft_id: composeOptions.draftEmail?.id || undefined,
 			} });
-			toastManager.add({ title: "Draft saved!" });
+			toastManager.add({ title: t("toasts.draftSaved") });
 		}
 		catch (err: unknown) {
-			const message = (err instanceof Error ? err.message : null) || "Failed to save draft.";
+			const message = (err instanceof Error ? err.message : null) || t("errors.saveDraftFailed");
 			setError(message);
 			toastManager.add({ title: message, variant: "error" });
 		}
@@ -234,9 +244,9 @@ export function useComposeForm(mailboxId?: string, _folder?: string) {
 
 	const handleSend = async (e: FormEvent, onClose: () => void) => {
 		e.preventDefault(); if (isSending) return; setError(null);
-		if (!currentMailbox || !mailboxId) { setError("No mailbox selected."); return; }
+		if (!currentMailbox || !mailboxId) { setError(t("errors.noMailbox")); return; }
 		const toRecipients = splitEmailList(to);
-		if (toRecipients.length === 0) { setError("Add at least one recipient."); return; }
+		if (toRecipients.length === 0) { setError(t("errors.noRecipient")); return; }
 		const ccRecipients = splitEmailList(cc); const bccRecipients = splitEmailList(bcc);
 		const fromName = currentMailbox.settings?.fromName || currentMailbox.name;
 		const from = fromName && fromName !== currentMailbox.email ? { email: currentMailbox.email, name: fromName } : currentMailbox.email;
@@ -250,15 +260,15 @@ export function useComposeForm(mailboxId?: string, _folder?: string) {
 			text: htmlToPlainText(body),
 		};
 		const draftId = composeOptions.draftEmail?.id; const mode = composeOptions.mode; const originalId = composeOptions.originalEmail?.id || composeOptions.draftEmail?.in_reply_to;
-		setIsSending(true); toastManager.add({ title: "Sending email..." });
+		setIsSending(true); toastManager.add({ title: t("toasts.sending") });
 		try {
 			if ((mode === "reply" || mode === "reply-all") && originalId) await replyMutation.mutateAsync({ mailboxId, emailId: originalId, email: emailData });
 			else if (mode === "forward" && originalId) await forwardMutation.mutateAsync({ mailboxId, emailId: originalId, email: emailData });
 			else await sendEmailMutation.mutateAsync({ mailboxId, email: emailData });
 			if (draftId) deleteEmailMutation.mutate({ mailboxId, id: draftId });
-			toastManager.add({ title: "Email sent!" });
+			toastManager.add({ title: t("toasts.sent") });
 			onClose();
-		} catch (err: unknown) { const message = (err instanceof Error ? err.message : null) || "Failed to send email."; setError(message); toastManager.add({ title: message, variant: "error" }); }
+		} catch (err: unknown) { const message = (err instanceof Error ? err.message : null) || t("errors.sendFailed"); setError(message); toastManager.add({ title: message, variant: "error" }); }
 		finally { setIsSending(false); }
 	};
 
