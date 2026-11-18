@@ -2,7 +2,7 @@
 // Licensed under the Apache 2.0 license found in the LICENSE file or at:
 //     https://opensource.org/licenses/Apache-2.0
 
-import { type Context, Hono } from "hono";
+import { type Context, Hono, type MiddlewareHandler } from "hono";
 import { cors } from "hono/cors";
 import PostalMime from "postal-mime";
 import { z } from "zod";
@@ -18,7 +18,10 @@ import {
 import { getAccessStub, getMailboxRole, hasRole, isAdmin, isAuthzEnabled, filterVisibleMailboxes } from "./lib/auth";
 import { FilterRuleBodySchema } from "./lib/filters";
 import {
+	ApiKeyBodySchema,
 	CreateMailboxBodySchema,
+	CreateUserBodySchema,
+	SetPasswordBodySchema,
 	EmailLabelBodySchema,
 	LabelBodySchema,
 	UpdateLabelBodySchema,
@@ -34,6 +37,8 @@ import type { GetEmailsOptions, SearchFilterOptions } from "./durableObject";
 import { Folders } from "../shared/folders";
 import type { Env } from "./types";
 import { slugify } from "./lib/slug";
+import { createAuth, createUserWithPassword, deleteUser, getAuthMode, listUsers, setUserPassword } from "./auth";
+import { createApiKey, deleteApiKey, listApiKeys } from "./auth/api-keys";
 import { normalizeMailboxId, requireMailbox, type MailboxContext } from "./lib/mailbox";
 
 type AppContext = Context<MailboxContext>;
@@ -123,7 +128,70 @@ app.get("/api/v1/config", (c) => {
 
 app.get("/api/v1/me", (c) => {
 	const email = c.get("userEmail") ?? "";
-	return c.json({ email, isAdmin: !isAuthzEnabled(c.env) || isAdmin(c.env, email), authzEnabled: isAuthzEnabled(c.env) });
+	return c.json({
+		email,
+		isAdmin: !isAuthzEnabled(c.env) || isAdmin(c.env, email),
+		authzEnabled: isAuthzEnabled(c.env),
+		authMode: getAuthMode(c.env),
+	});
+});
+
+// -- Users and API keys (AUTH_MODE=password) -------------------------
+
+const passwordModeOnly: MiddlewareHandler<MailboxContext> = async (c, next) =>
+	getAuthMode(c.env) === "password" ? next() : c.json({ error: "Not found" }, 404);
+
+const adminOnly: MiddlewareHandler<MailboxContext> = async (c, next) =>
+	isAdmin(c.env, c.get("userEmail") ?? "") ? next() : c.json({ error: "Admins only" }, 403);
+
+app.use("/api/v1/admin/*", passwordModeOnly, adminOnly);
+app.use("/api/v1/me/api-keys", passwordModeOnly);
+app.use("/api/v1/me/api-keys/*", passwordModeOnly);
+
+app.get("/api/v1/admin/users", async (c) => c.json(await listUsers(createAuth(c.env, c.req.raw))));
+
+app.post("/api/v1/admin/users", async (c) => {
+	const { email, name, password } = CreateUserBodySchema.parse(await c.req.json());
+	const user = await createUserWithPassword(createAuth(c.env, c.req.raw), { email, name: name ?? "", password });
+	return user === "exists" ? c.json({ error: "A user with this email already exists" }, 409) : c.json(user, 201);
+});
+
+app.put("/api/v1/admin/users/:id/password", async (c) => {
+	const { password } = SetPasswordBodySchema.parse(await c.req.json());
+	await setUserPassword(createAuth(c.env, c.req.raw), c.req.param("id")!, password);
+	return c.body(null, 204);
+});
+
+app.delete("/api/v1/admin/users/:id", async (c) => {
+	const auth = createAuth(c.env, c.req.raw);
+	const target = (await listUsers(auth)).find((u) => u.id === c.req.param("id"));
+	if (!target) return c.json({ error: "User not found" }, 404);
+	// Deleting yourself would lock the last admin out.
+	if (target.email.toLowerCase() === c.get("userEmail")) return c.json({ error: "You cannot delete your own account" }, 400);
+	await deleteUser(auth, target.id);
+	await getAccessStub(c.env).removeUser(target.email.toLowerCase());
+	return c.body(null, 204);
+});
+
+/** API keys can only be managed from a browser session, never with a key itself. */
+const sessionUserId = (c: Context<MailboxContext>) => (c.get("authMethod") === "session" ? (c.get("userId") ?? null) : null);
+
+app.get("/api/v1/me/api-keys", async (c) => {
+	const userId = sessionUserId(c);
+	return userId ? c.json(await listApiKeys(c.env.DB, userId)) : c.json({ error: "Sign in with a password session" }, 403);
+});
+
+app.post("/api/v1/me/api-keys", async (c) => {
+	const userId = sessionUserId(c);
+	if (!userId) return c.json({ error: "Sign in with a password session" }, 403);
+	const { name } = ApiKeyBodySchema.parse(await c.req.json());
+	return c.json(await createApiKey(c.env.DB, userId, name), 201);
+});
+
+app.delete("/api/v1/me/api-keys/:id", async (c) => {
+	const userId = sessionUserId(c);
+	if (!userId) return c.json({ error: "Sign in with a password session" }, 403);
+	return (await deleteApiKey(c.env.DB, userId, c.req.param("id")!)) ? c.body(null, 204) : c.json({ error: "Key not found" }, 404);
 });
 
 app.get("/api/v1/mailboxes", async (c) => {

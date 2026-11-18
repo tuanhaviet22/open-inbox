@@ -78,6 +78,11 @@ export class AccessDO extends DurableObject<Env> {
 		return "ok";
 	}
 
+	/** Remove a user from every mailbox (used when their account is deleted). */
+	async removeUser(email: string): Promise<void> {
+		this.ctx.storage.sql.exec(`DELETE FROM members WHERE email = ?1`, email);
+	}
+
 	async deleteMailbox(mailboxId: string): Promise<void> {
 		this.ctx.storage.sql.exec(`DELETE FROM members WHERE mailbox_id = ?1`, mailboxId);
 	}

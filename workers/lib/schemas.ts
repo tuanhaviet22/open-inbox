@@ -12,6 +12,7 @@
  */
 import { z } from "zod";
 import { SUPPORTED_LOCALES } from "../../shared/locales";
+import { MIN_PASSWORD_LENGTH } from "../auth/constants";
 
 // ── TypeScript Interfaces ──────────────────────────────────────────
 
@@ -144,5 +145,15 @@ export const LabelBodySchema = z.object({
 export const UpdateLabelBodySchema = LabelBodySchema.partial();
 
 export const EmailLabelBodySchema = z.object({ labelId: z.string().min(1) });
+
+export const CreateUserBodySchema = z.object({
+	email: z.string().email(),
+	name: z.string().trim().max(100).optional(),
+	password: z.string().min(MIN_PASSWORD_LENGTH).max(128),
+});
+
+export const SetPasswordBodySchema = z.object({ password: z.string().min(MIN_PASSWORD_LENGTH).max(128) });
+
+export const ApiKeyBodySchema = z.object({ name: z.string().trim().min(1).max(100) });
 
 export const FolderNameBodySchema = z.object({ name: z.string().trim().min(1).max(100) });

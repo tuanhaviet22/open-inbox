@@ -15,6 +15,11 @@
 		// The worker now fails closed outside local development if Access is not configured.
 		"DOMAINS": "example.com",
 		"EMAIL_ADDRESSES": [],
+		// "access" (default): Cloudflare Access JWT. "password": built-in email + password
+		// login (Better Auth + D1). Password mode needs ADMIN_EMAILS, BETTER_AUTH_URL and the
+		// BETTER_AUTH_SECRET / SETUP_TOKEN secrets; see README.
+		"AUTH_MODE": "access",
+		"BETTER_AUTH_URL": "",
 		// Comma-separated admin emails. Setting this turns on per-mailbox authorization;
 		// leave empty to keep the shared-trust model (every Access user sees every mailbox).
 		"ADMIN_EMAILS": ""
@@ -30,6 +35,14 @@
 			"binding": "BUCKET",
 			"bucket_name": "open-inbox",
 			"preview_bucket_name": "open-inbox"
+		}
+	],
+	"d1_databases": [
+		{
+			// Users, sessions and API keys for AUTH_MODE=password.
+			"binding": "DB",
+			"database_name": "open-inbox-auth",
+			"migrations_dir": "migrations"
 		}
 	],
 	"ai": {

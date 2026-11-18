@@ -7,6 +7,11 @@ export interface Env extends Cloudflare.Env {
 	TEAM_DOMAIN: string;
 	/** Identity used for local development, where there is no Access JWT. */
 	DEV_USER_EMAIL?: string;
+	/** Secrets for AUTH_MODE=password. */
+	BETTER_AUTH_SECRET?: string;
+	SETUP_TOKEN?: string;
+	/** Sender of password-reset mail; defaults to no-reply@<first DOMAINS entry>. */
+	AUTH_FROM_ADDRESS?: string;
 	/** Optional HTTPS relay used instead of the Cloudflare send_email binding. */
 	OUTBOUND_WEBHOOK_URL?: string;
 	OUTBOUND_WEBHOOK_SECRET?: string;
