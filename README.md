@@ -1,22 +1,30 @@
 <div align="center">
-  <h1>Open Inbox</h1>
-  <p><em>A self-hosted email client with an AI agent, running entirely on Cloudflare Workers</em></p>
+  <img src="./public/logo.svg" alt="Open Inbox" height="64">
+  <p><em>A self-hosted, multi-user, multilingual email client with an AI agent, running on Cloudflare Workers</em></p>
 </div>
 
-> Open Inbox is a fork of [cloudflare/agentic-inbox](https://github.com/cloudflare/agentic-inbox) (Apache-2.0).
+Open Inbox is an independent open-source project. It started as a fork of [cloudflare/agentic-inbox](https://github.com/cloudflare/agentic-inbox) (Apache-2.0) and has since diverged: it is developed, versioned and released on its own and is not affiliated with or endorsed by Cloudflare. Credit for the original architecture goes to the Agentic Inbox authors; see [LICENSE](LICENSE).
 
-Open Inbox lets you send, receive, and manage emails through a modern web interface -- all powered by your own Cloudflare account. Incoming emails arrive via [Cloudflare Email Routing](https://developers.cloudflare.com/email-routing/), each mailbox is isolated in its own [Durable Object](https://developers.cloudflare.com/durable-objects/) with a SQLite database, and attachments are stored in [R2](https://developers.cloudflare.com/r2/).
+Open Inbox lets you send, receive, and manage emails through a modern web interface, all on your own Cloudflare account. Incoming emails arrive via [Cloudflare Email Routing](https://developers.cloudflare.com/email-routing/), each mailbox is isolated in its own [Durable Object](https://developers.cloudflare.com/durable-objects/) with a SQLite database, and attachments are stored in [R2](https://developers.cloudflare.com/r2/).
 
-An **AI-powered Email Agent** can read your inbox, search conversations, and draft replies -- built with the [Cloudflare Agents SDK](https://developers.cloudflare.com/agents/) and [Workers AI](https://developers.cloudflare.com/workers-ai/).
+**What Open Inbox adds on top of Agentic Inbox**
+
+- **Multi-user access control:** owners and members per mailbox, enforced on the API, the agent and MCP
+- **Internationalization:** English and Vietnamese UI, easy to extend with more languages; outgoing mail follows the mailbox language; accent-insensitive search
+- **Labels and filter rules** applied to incoming mail
+- **Pluggable outbound provider:** Cloudflare Email Service or your own HTTP relay
+- Validation, tests and CI across the API
+
+An **AI-powered Email Agent** can read your inbox, search conversations, and draft replies, built with the [Cloudflare Agents SDK](https://developers.cloudflare.com/agents/) and [Workers AI](https://developers.cloudflare.com/workers-ai/).
 
 ![Open Inbox screenshot](./demo_app.png)
 
 
-Read the blog post to learn more about Cloudflare Email Service and how to use it with the Agents SDK, MCP, and from the Wrangler CLI: [Email for Agents](https://blog.cloudflare.com/email-for-agents/).
+Background reading from the upstream project: this blog post explains Cloudflare Email Service and how to use it with the Agents SDK, MCP, and from the Wrangler CLI: [Email for Agents](https://blog.cloudflare.com/email-for-agents/).
 
 ## How to setup
 
-**Important**: Clicking the 'Deploy to Cloudflare' button is only one part of the setup. You must follow the **After deploying** steps as well. For a full step-by-step guide with screenshots, refer to this comment: 
+**Important**: Clicking the 'Deploy to Cloudflare' button is only one part of the setup. You must follow the **After deploying** steps as well. For a step-by-step guide with screenshots, see this comment on the upstream Agentic Inbox repo (the setup steps are the same): 
 https://github.com/cloudflare/agentic-inbox/issues/4#issuecomment-4269118513
 
 ### To set up
