@@ -18,6 +18,9 @@ export type MailboxContext = {
 		mailboxStub: DurableObjectStub<MailboxDO>;
 		/** Authenticated user (Cloudflare Access `email` claim). */
 		userEmail: string;
+		/** Set for session and API-key logins (AUTH_MODE=password). */
+		userId?: string;
+		authMethod?: "dev" | "access" | "session" | "api-key";
 		/** The user's role on the current mailbox. */
 		mailboxRole: EffectiveRole;
 	};

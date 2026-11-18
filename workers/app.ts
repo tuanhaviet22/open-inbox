@@ -4,11 +4,12 @@
 
 import { routeAgentRequest } from "agents";
 import { Hono, type Context } from "hono";
-import { jwtVerify, createRemoteJWKSet } from "jose";
 import { createRequestHandler } from "react-router";
 import { app as apiApp, receiveEmail } from "./index";
 import { EmailMCP } from "./mcp";
+import { authApp } from "./auth/routes";
 import { getMailboxRole, hasRole } from "./lib/auth";
+import { authGuard, type GuardEnv } from "./lib/guard";
 import { normalizeMailboxId } from "./lib/mailbox";
 import type { Env } from "./types";
 
@@ -31,68 +32,22 @@ const requestHandler = createRequestHandler(
 	import.meta.env.MODE,
 );
 
-function getAccessUrls(teamDomain: string) {
-	const certsPath = "/cdn-cgi/access/certs";
-	const teamUrl = new URL(teamDomain);
-	const issuer = teamUrl.origin;
-	const certsUrl = teamUrl.pathname.endsWith(certsPath)
-		? teamUrl
-		: new URL(certsPath, issuer);
-
-	return { issuer, certsUrl };
-}
-
 // Main app that wraps the API and adds React Router fallback
-type AppEnv = { Bindings: Env; Variables: { userEmail: string } };
-const app = new Hono<AppEnv>();
+const app = new Hono<GuardEnv>();
 
-// Cloudflare Access JWT validation middleware (production only)
-app.use("*", async (c, next) => {
-	// Skip validation in development
-	if (import.meta.env.DEV) {
-		c.set("userEmail", (c.env.DEV_USER_EMAIL || "dev@localhost").toLowerCase());
-		return next();
-	}
+// Authentication: Cloudflare Access JWT or Better Auth session (see AUTH_MODE).
+// Per-mailbox authorization is enforced by requireMailbox (API), the
+// /agents/* guard and the MCP server whenever ADMIN_EMAILS is set.
+app.use("*", authGuard({ dev: import.meta.env.DEV }));
 
-	const { POLICY_AUD, TEAM_DOMAIN } = c.env;
-
-	// Fail closed in production if Access is not configured.
-	if (!POLICY_AUD || !TEAM_DOMAIN) {
-		return c.text(
-			"Cloudflare Access must be configured in production. Set POLICY_AUD and TEAM_DOMAIN.",
-			500,
-		);
-	}
-
-	const token = c.req.header("cf-access-jwt-assertion");
-	if (!token) {
-		return c.text("Missing required CF Access JWT", 403);
-	}
-
-	try {
-		const { issuer, certsUrl } = getAccessUrls(TEAM_DOMAIN);
-		const JWKS = createRemoteJWKSet(certsUrl);
-		const { payload } = await jwtVerify(token, JWKS, {
-			issuer,
-			audience: POLICY_AUD,
-		});
-		// Service-token JWTs carry no email claim; they get an empty identity
-		// and therefore no mailbox access unless authorization is disabled.
-		c.set("userEmail", typeof payload.email === "string" ? payload.email.toLowerCase() : "");
-	} catch {
-		return c.text("Invalid or expired Access token", 403);
-	}
-
-	// Per-mailbox authorization is enforced by requireMailbox (API), the
-	// /agents/* guard and the MCP server whenever ADMIN_EMAILS is set.
-	return next();
-});
+// Public endpoints of AUTH_MODE=password (/api/auth/*, /api/setup)
+app.route("/", authApp);
 
 // MCP server endpoint — used by AI coding tools (ProtoAgent, Claude Code, Cursor, etc.)
 // Must be before API routes and React Router catch-all
 const mcpHandler = EmailMCP.serve("/mcp", { binding: "EMAIL_MCP" });
 // The caller's identity is handed to the MCP agent as `props`.
-const mcpContext = (c: Context<AppEnv>) => {
+const mcpContext = (c: Context<GuardEnv>) => {
 	const ctx = c.executionCtx;
 	return {
 		waitUntil: ctx.waitUntil.bind(ctx),

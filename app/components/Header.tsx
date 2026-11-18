@@ -3,12 +3,14 @@
 //     https://opensource.org/licenses/Apache-2.0
 
 import { Button, Input, Tooltip } from "@cloudflare/kumo";
-import { GearSixIcon, ListIcon, MagnifyingGlassIcon, RobotIcon, XIcon } from "@phosphor-icons/react";
+import { GearSixIcon, ListIcon, MagnifyingGlassIcon, RobotIcon, SignOutIcon, UserCircleIcon, XIcon } from "@phosphor-icons/react";
 import { type KeyboardEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router";
 import LanguageSwitcher from "~/components/LanguageSwitcher";
 import { useUIStore } from "~/hooks/useUIStore";
+import { authClient } from "~/lib/auth-client";
+import { useMe } from "~/queries/members";
 
 export default function Header() {
 	const { t } = useTranslation("mailbox");
@@ -19,6 +21,12 @@ export default function Header() {
 	const location = useLocation();
 	const [searchParams] = useSearchParams();
 	const { toggleSidebar, toggleAgentPanel, isAgentPanelOpen } = useUIStore();
+	const { data: me } = useMe();
+
+	const handleSignOut = async () => {
+		await authClient.signOut();
+		window.location.assign("/login");
+	};
 
 	// Sync search input with URL query param so it stays populated
 	const urlQuery = searchParams.get("q") || "";
@@ -148,6 +156,28 @@ export default function Header() {
 						aria-label={t("header.settings")}
 					/>
 				</Tooltip>
+				{me?.authMode === "password" && (
+					<>
+						<Tooltip content={t("account.title", { ns: "auth" })} side="bottom" asChild>
+							<Button
+								variant="ghost"
+								shape="square"
+								icon={<UserCircleIcon size={20} />}
+								onClick={() => navigate("/account")}
+								aria-label={t("account.title", { ns: "auth" })}
+							/>
+						</Tooltip>
+						<Tooltip content={t("account.signOut", { ns: "auth" })} side="bottom" asChild>
+							<Button
+								variant="ghost"
+								shape="square"
+								icon={<SignOutIcon size={20} />}
+								onClick={handleSignOut}
+								aria-label={t("account.signOut", { ns: "auth" })}
+							/>
+						</Tooltip>
+					</>
+				)}
 			</div>
 		</header>
 	);

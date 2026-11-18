@@ -2,7 +2,7 @@
 // Licensed under the Apache 2.0 license found in the LICENSE file or at:
 //     https://opensource.org/licenses/Apache-2.0
 
-import type { Email, FilterRule, FilterRuleInput, Folder, Label, Mailbox, Member } from "~/types";
+import type { ApiKey, AppUser, Email, FilterRule, FilterRuleInput, Folder, Label, Mailbox, Member } from "~/types";
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
@@ -39,6 +39,11 @@ async function request<T>(
 				...(options.headers as Record<string, string>),
 			},
 		});
+
+		if (res.status === 401 && typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+			// Session expired or signed out (AUTH_MODE=password): go sign in again.
+			window.location.assign("/login");
+		}
 
 		if (!res.ok) {
 			const body = await res.json().catch(() => ({}));
@@ -100,7 +105,15 @@ const api = {
 		get<{ domains: string[]; emailAddresses: string[] }>("/api/v1/config"),
 
 	// Current user + members
-	getMe: () => get<{ email: string; isAdmin: boolean; authzEnabled: boolean }>("/api/v1/me"),
+	getMe: () =>
+		get<{ email: string; isAdmin: boolean; authzEnabled: boolean; authMode: "access" | "password" }>("/api/v1/me"),
+	listUsers: () => get<AppUser[]>("/api/v1/admin/users"),
+	createUser: (user: { email: string; name?: string; password: string }) => post<AppUser>("/api/v1/admin/users", user),
+	setUserPassword: (id: string, password: string) => put<void>(`/api/v1/admin/users/${id}/password`, { password }),
+	deleteUser: (id: string) => del<void>(`/api/v1/admin/users/${id}`),
+	listApiKeys: () => get<ApiKey[]>("/api/v1/me/api-keys"),
+	createApiKey: (name: string) => post<{ id: string; name: string; key: string }>("/api/v1/me/api-keys", { name }),
+	deleteApiKey: (id: string) => del<void>(`/api/v1/me/api-keys/${id}`),
 	listMembers: (mailboxId: string) =>
 		get<Member[]>(`/api/v1/mailboxes/${mailboxId}/members`),
 	setMember: (mailboxId: string, email: string, role: Member["role"]) =>
