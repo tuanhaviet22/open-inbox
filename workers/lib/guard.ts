@@ -17,7 +17,8 @@ function isPublicInPasswordMode(method: string, path: string): boolean {
 		path.startsWith("/api/auth/") ||
 		path === "/api/setup" ||
 		path === "/__manifest" ||
-		((method === "GET" || method === "HEAD") && (path === "/login" || path === "/login.data"))
+		((method === "GET" || method === "HEAD") &&
+			(path === "/login" || path === "/login.data" || path === "/reset-password" || path === "/reset-password.data"))
 	);
 }
 

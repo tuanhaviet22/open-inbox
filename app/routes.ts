@@ -16,5 +16,9 @@ export default [
 		route("settings", "routes/settings.tsx"),
 		route("search", "routes/search-results.tsx"),
 	]),
+	route("login", "routes/login.tsx"),
+	route("reset-password", "routes/reset-password.tsx"),
+	route("account", "routes/account.tsx"),
+	route("admin/users", "routes/admin-users.tsx"),
 	route("*", "routes/not-found.tsx"),
 ] satisfies RouteConfig;

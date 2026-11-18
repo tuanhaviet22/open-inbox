@@ -86,6 +86,25 @@ npm run deploy
 - [Workers AI](https://developers.cloudflare.com/workers-ai/) enabled (for the agent)
 - [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) configured for deployed/shared environments (required in production)
 
+### Authentication modes
+
+Set `AUTH_MODE` in `wrangler.jsonc`:
+
+- `access` (default): Cloudflare Access protects the Worker (see the setup steps above).
+- `password`: the Worker can be public and Open Inbox asks users to sign in with email and password ([Better Auth](https://www.better-auth.com) on D1). Self-service sign-up is disabled: admins create users.
+
+Setting up `password` mode:
+
+1. Create the D1 database and apply the migrations: `wrangler d1 create open-inbox-auth`, put its id in `wrangler.jsonc` (`d1_databases[0].database_id`), then `wrangler d1 migrations apply DB --remote`.
+2. Set `AUTH_MODE` to `password`, `BETTER_AUTH_URL` to your public URL (e.g. `https://mail.example.com`) and `ADMIN_EMAILS` to your admin address(es).
+3. Add secrets: `wrangler secret put BETTER_AUTH_SECRET` (a long random string) and `wrangler secret put SETUP_TOKEN` (another one).
+4. Create the first admin once (the email must be in `ADMIN_EMAILS`):
+   `curl -X POST https://mail.example.com/api/setup -H 'content-type: application/json' -d '{"token":"<SETUP_TOKEN>","email":"you@example.com","password":"<at least 10 characters>"}'`
+   You can then remove `SETUP_TOKEN`. The endpoint only works while there are no users.
+5. Sign in, then add people under **Account > Manage users**, and give them mailboxes in each mailbox's Settings.
+
+Details: failed sign-ins are rate limited (5 per minute per IP, stored in D1), state-changing requests must come from your own origin, password reset mails are sent through your outbound provider from `no-reply@<first domain>` (override with `AUTH_FROM_ADDRESS`), and the app refuses to run in this mode without `ADMIN_EMAILS` and `BETTER_AUTH_SECRET`. For MCP clients (Claude Code, Cursor) create an API key under **Account** and send it as `Authorization: Bearer <key>`. Password hashing uses scrypt, which is CPU heavy; if sign-in hits Workers CPU limits on the free plan, use a paid plan.
+
 ### Access model
 
 By default (`ADMIN_EMAILS` empty) any user who passes the shared Cloudflare Access policy can access all mailboxes, including through the MCP server at `/mcp`.

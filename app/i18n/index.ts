@@ -6,7 +6,7 @@ import { initReactI18next } from "react-i18next";
 import { DEFAULT_LOCALE, type Locale } from "shared/locales";
 
 /** Namespaces map 1:1 to `app/locales/<lng>/<ns>.json`. */
-export const NAMESPACES = ["common", "mailbox", "compose", "settings", "agent"] as const;
+export const NAMESPACES = ["common", "mailbox", "compose", "settings", "agent", "auth"] as const;
 export type Namespace = (typeof NAMESPACES)[number];
 
 // Every `app/locales/<lng>/<ns>.json` is picked up automatically; adding a
