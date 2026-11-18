@@ -16,8 +16,12 @@ import {
 	listMailboxes,
 } from "./lib/email-helpers";
 import { getAccessStub, getMailboxRole, hasRole, isAdmin, isAuthzEnabled, filterVisibleMailboxes } from "./lib/auth";
+import { FilterRuleBodySchema } from "./lib/filters";
 import {
 	CreateMailboxBodySchema,
+	EmailLabelBodySchema,
+	LabelBodySchema,
+	UpdateLabelBodySchema,
 	SetMemberBodySchema,
 	FolderNameBodySchema,
 	MoveEmailBodySchema,
@@ -54,7 +58,7 @@ const DraftBody = z.object({
  * deep that tsc gives up (TS2589). Results are only forwarded as JSON.
  */
 type ListStub = {
-	getEmails(o: GetEmailsOptions & { thread_id?: string }): Promise<unknown>;
+	getEmails(o: GetEmailsOptions): Promise<unknown>;
 	getThreadedEmails(o: GetEmailsOptions): Promise<unknown>;
 	getThreadEmails(threadId: string): Promise<unknown>;
 	searchEmails(o: SearchFilterOptions & { page?: number; limit?: number }): Promise<unknown>;
@@ -216,6 +220,7 @@ app.delete("/api/v1/mailboxes/:mailboxId/members/:email", async (c: AppContext) 
 app.get("/api/v1/mailboxes/:mailboxId/emails", async (c: AppContext) => {
 	const folder = c.req.query("folder");
 	const thread_id = c.req.query("thread_id");
+	const label_id = c.req.query("label");
 	const threaded = boolQuery(c, "threaded");
 	const page = intQuery(c, "page");
 	const limit = intQuery(c, "limit");
@@ -229,9 +234,9 @@ app.get("/api/v1/mailboxes/:mailboxId/emails", async (c: AppContext) => {
 		const totalCount = await stub.countThreadedEmails(folder);
 		return jsonResponse({ emails, totalCount });
 	}
-	const emails = await listStub.getEmails({ folder, thread_id, page, limit, sortColumn, sortDirection });
-	if (folder) {
-		const totalCount = await stub.countEmails({ folder, thread_id });
+	const emails = await listStub.getEmails({ folder, thread_id, label_id, page, limit, sortColumn, sortDirection });
+	if (folder || label_id) {
+		const totalCount = await stub.countEmails({ folder, thread_id, label_id });
 		return jsonResponse({ emails, totalCount });
 	}
 	return jsonResponse(emails);
@@ -343,6 +348,78 @@ app.post("/api/v1/mailboxes/:mailboxId/threads/:threadId/read", async (c: AppCon
 
 app.post("/api/v1/mailboxes/:mailboxId/emails/:id/reply", handleReplyEmail);
 app.post("/api/v1/mailboxes/:mailboxId/emails/:id/forward", handleForwardEmail);
+
+// -- Labels ---------------------------------------------------------
+
+app.get("/api/v1/mailboxes/:mailboxId/labels", async (c: AppContext) => c.json(await c.var.mailboxStub.listLabels()));
+
+app.post("/api/v1/mailboxes/:mailboxId/labels", async (c: AppContext) => {
+	const { name, color } = LabelBodySchema.parse(await c.req.json());
+	const label = await c.var.mailboxStub.createLabel(name, color);
+	return label ? c.json(label, 201) : c.json({ error: "A label with this name already exists" }, 409);
+});
+
+app.put("/api/v1/mailboxes/:mailboxId/labels/:id", async (c: AppContext) => {
+	const patch = UpdateLabelBodySchema.parse(await c.req.json());
+	const result = await c.var.mailboxStub.updateLabel(c.req.param("id")!, patch);
+	if (result === "conflict") return c.json({ error: "A label with this name already exists" }, 409);
+	return result ? c.json(result) : c.json({ error: "Label not found" }, 404);
+});
+
+app.delete("/api/v1/mailboxes/:mailboxId/labels/:id", async (c: AppContext) => {
+	const ok = await c.var.mailboxStub.deleteLabel(c.req.param("id")!);
+	return ok ? c.body(null, 204) : c.json({ error: "Label not found" }, 404);
+});
+
+app.get("/api/v1/mailboxes/:mailboxId/emails/:id/labels", async (c: AppContext) =>
+	c.json(await c.var.mailboxStub.getEmailLabels(c.req.param("id")!)),
+);
+
+app.post("/api/v1/mailboxes/:mailboxId/emails/:id/labels", async (c: AppContext) => {
+	const { labelId } = EmailLabelBodySchema.parse(await c.req.json());
+	const ok = await c.var.mailboxStub.addEmailLabel(c.req.param("id")!, labelId);
+	return ok ? c.json({ status: "labeled" }) : c.json({ error: "Email or label not found" }, 404);
+});
+
+app.delete("/api/v1/mailboxes/:mailboxId/emails/:id/labels/:labelId", async (c: AppContext) => {
+	await c.var.mailboxStub.removeEmailLabel(c.req.param("id")!, c.req.param("labelId")!);
+	return c.body(null, 204);
+});
+
+// -- Filter rules ---------------------------------------------------
+
+/** Reject rules that point at a label or folder that does not exist. */
+async function validateFilterRefs(c: AppContext, actions: { labelId?: string; moveTo?: string }) {
+	const stub = c.var.mailboxStub;
+	if (actions.labelId && !(await stub.listLabels()).some((l) => l.id === actions.labelId)) return "Unknown label";
+	if (actions.moveTo && !(await stub.getFolders()).some((f) => f.id === actions.moveTo)) return "Unknown folder";
+	return null;
+}
+
+app.get("/api/v1/mailboxes/:mailboxId/filters", async (c: AppContext) => c.json(await c.var.mailboxStub.listFilterRules()));
+
+app.post("/api/v1/mailboxes/:mailboxId/filters", async (c: AppContext) => {
+	if (!hasRole(c.var.mailboxRole, "owner")) return c.json({ error: "Only owners can manage filters" }, 403);
+	const body = FilterRuleBodySchema.parse(await c.req.json());
+	const refError = await validateFilterRefs(c, body.actions);
+	if (refError) return c.json({ error: refError }, 400);
+	return c.json(await c.var.mailboxStub.createFilterRule(body), 201);
+});
+
+app.put("/api/v1/mailboxes/:mailboxId/filters/:id", async (c: AppContext) => {
+	if (!hasRole(c.var.mailboxRole, "owner")) return c.json({ error: "Only owners can manage filters" }, 403);
+	const body = FilterRuleBodySchema.parse(await c.req.json());
+	const refError = await validateFilterRefs(c, body.actions);
+	if (refError) return c.json({ error: refError }, 400);
+	const rule = await c.var.mailboxStub.updateFilterRule(c.req.param("id")!, body);
+	return rule ? c.json(rule) : c.json({ error: "Filter not found" }, 404);
+});
+
+app.delete("/api/v1/mailboxes/:mailboxId/filters/:id", async (c: AppContext) => {
+	if (!hasRole(c.var.mailboxRole, "owner")) return c.json({ error: "Only owners can manage filters" }, 403);
+	const ok = await c.var.mailboxStub.deleteFilterRule(c.req.param("id")!);
+	return ok ? c.body(null, 204) : c.json({ error: "Filter not found" }, 404);
+});
 
 // -- Folders --------------------------------------------------------
 
@@ -474,6 +551,13 @@ async function receiveEmail(event: { raw: ReadableStream; rawSize: number }, env
 		in_reply_to: inReplyTo, email_references: emailReferences.length > 0 ? JSON.stringify(emailReferences) : null,
 		thread_id: threadId, message_id: originalMessageId, raw_headers: JSON.stringify(parsedEmail.headers),
 	}, attachmentData);
+
+	// A filter may have moved the mail out of the inbox (e.g. to trash); don't auto-draft for those.
+	const filtered = await stub.applyFilters(messageId).catch((e: Error) => {
+		console.error("Filter rules failed:", e.message);
+		return { applied: false } as { applied: boolean; movedTo?: string };
+	});
+	if (filtered.movedTo && filtered.movedTo !== Folders.INBOX) return;
 
 	const agentStub = env.EMAIL_AGENT.get(env.EMAIL_AGENT.idFromName(mailboxId));
 	ctx.waitUntil(agentStub.fetch(new Request("https://agents/onNewEmail", {

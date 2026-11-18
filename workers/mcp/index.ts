@@ -19,6 +19,8 @@ import {
 	toolSendEmail,
 	toolMarkEmailRead,
 	toolMoveEmail,
+	toolListLabels,
+	toolSetEmailLabel,
 } from "../lib/tools";
 import { Folders, FOLDER_TOOL_DESCRIPTION, MOVE_FOLDER_TOOL_DESCRIPTION } from "../../shared/folders";
 import type { Env } from "../types";
@@ -404,6 +406,35 @@ export class EmailMCP extends McpAgent<Env, unknown, { userEmail?: string }> {
 				if (denied) return denied;
 				const result = await toolMarkEmailRead(env, mailboxId, emailId, read);
 				return mcpText(result);
+			},
+		);
+
+		// ── list_labels ────────────────────────────────────────────
+		this.server.tool(
+			"list_labels",
+			"List the labels defined in a mailbox (id, name, color).",
+			{ mailboxId: z.string().describe("The mailbox email address") },
+			async ({ mailboxId }) => {
+				const denied = await verifyMailbox(mailboxId);
+				if (denied) return denied;
+				return mcpText(await toolListLabels(env, mailboxId));
+			},
+		);
+
+		// ── label_email ────────────────────────────────────────────
+		this.server.tool(
+			"label_email",
+			"Add or remove a label on an email. Use list_labels to find label ids.",
+			{
+				mailboxId: z.string().describe("The mailbox email address"),
+				emailId: z.string().describe("The email ID"),
+				labelId: z.string().describe("The label ID"),
+				action: z.enum(["add", "remove"]).default("add"),
+			},
+			async ({ mailboxId, emailId, labelId, action }) => {
+				const denied = await verifyMailbox(mailboxId);
+				if (denied) return denied;
+				return mcpResult(await toolSetEmailLabel(env, mailboxId, emailId, labelId, action));
 			},
 		);
 

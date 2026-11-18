@@ -134,4 +134,15 @@ export const UpdateEmailBodySchema = z.object({
 
 export const MoveEmailBodySchema = z.object({ folderId: z.string().min(1) });
 
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Expected a #rrggbb color");
+
+export const LabelBodySchema = z.object({
+	name: z.string().trim().min(1).max(50),
+	color: hexColor.optional(),
+});
+
+export const UpdateLabelBodySchema = LabelBodySchema.partial();
+
+export const EmailLabelBodySchema = z.object({ labelId: z.string().min(1) });
+
 export const FolderNameBodySchema = z.object({ name: z.string().trim().min(1).max(100) });

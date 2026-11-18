@@ -366,6 +366,29 @@ export async function toolMoveEmail(
 	return { error: "Failed to move email" };
 }
 
+// ── labels ─────────────────────────────────────────────────────────
+
+export async function toolListLabels(env: Env, mailboxId: string) {
+	return getMailboxStub(env, mailboxId).listLabels();
+}
+
+export async function toolSetEmailLabel(
+	env: Env,
+	mailboxId: string,
+	emailId: string,
+	labelId: string,
+	action: "add" | "remove",
+) {
+	const stub = getMailboxStub(env, mailboxId);
+	if (action === "remove") {
+		await stub.removeEmailLabel(emailId, labelId);
+		return { status: "unlabeled", emailId, labelId };
+	}
+	return (await stub.addEmailLabel(emailId, labelId))
+		? { status: "labeled", emailId, labelId }
+		: { error: "Email or label not found" };
+}
+
 // ── discard_draft ──────────────────────────────────────────────────
 
 export async function toolDiscardDraft(

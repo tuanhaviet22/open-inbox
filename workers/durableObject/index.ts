@@ -9,6 +9,7 @@ import type { SQL } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { Folders } from "../../shared/folders";
 import { foldText, htmlToSearchText } from "../../shared/text";
+import { collectActions, type FilterRule } from "../lib/filters";
 import type { Env } from "../types";
 import { applyMigrations, mailboxMigrations } from "./migrations";
 
@@ -70,6 +71,13 @@ export interface GetEmailsOptions {
 	limit?: number;
 	sortColumn?: SortColumn;
 	sortDirection?: "ASC" | "DESC";
+	label_id?: string;
+}
+
+export interface Label {
+	id: string;
+	name: string;
+	color: string;
 }
 
 interface EmailData {
@@ -98,6 +106,17 @@ interface AttachmentData {
 	size: number;
 	content_id?: string | null;
 	disposition?: string | null;
+}
+
+function rowToRule(r: Record<string, unknown>): FilterRule {
+	return {
+		id: r.id as string,
+		name: r.name as string,
+		enabled: !!r.enabled,
+		conditions: JSON.parse(r.conditions as string),
+		actions: JSON.parse(r.actions as string),
+		position: r.position as number,
+	};
 }
 
 /** Folded text of every searchable field of an email. */
@@ -150,6 +169,7 @@ export class MailboxDO extends DurableObject<Env> {
 		const {
 			folder,
 			thread_id,
+			label_id,
 			page = 1,
 			limit: rawLimit = 25,
 			sortColumn: rawSortColumn = "date",
@@ -175,6 +195,9 @@ export class MailboxDO extends DurableObject<Env> {
 		}
 		if (thread_id) {
 			conditions.push(eq(schema.emails.thread_id, thread_id));
+		}
+		if (label_id) {
+			conditions.push(sql`${schema.emails.id} IN (SELECT email_id FROM email_labels WHERE label_id = ${label_id})`);
 		}
 
 		const orderCol = SORT_COLUMN_MAP[sortColumn];
@@ -214,8 +237,8 @@ export class MailboxDO extends DurableObject<Env> {
 	/**
 	 * Count total emails matching the given filters (for pagination).
 	 */
-	async countEmails(options: { folder?: string; thread_id?: string } = {}) {
-		const { folder, thread_id } = options;
+	async countEmails(options: { folder?: string; thread_id?: string; label_id?: string } = {}) {
+		const { folder, thread_id, label_id } = options;
 		const conditions: string[] = [];
 		const params: (string | number)[] = [];
 
@@ -229,6 +252,11 @@ export class MailboxDO extends DurableObject<Env> {
 		if (thread_id) {
 			conditions.push(`thread_id = ?${params.length + 1}`);
 			params.push(thread_id);
+		}
+
+		if (label_id) {
+			conditions.push(`id IN (SELECT email_id FROM email_labels WHERE label_id = ?${params.length + 1})`);
+			params.push(label_id);
 		}
 
 		const where =
@@ -591,6 +619,7 @@ export class MailboxDO extends DurableObject<Env> {
 			.delete(schema.emails)
 			.where(eq(schema.emails.id, id))
 			.run();
+		this.ctx.storage.sql.exec(`DELETE FROM email_labels WHERE email_id = ?1`, id);
 
 		return emailAttachments;
 	}
@@ -699,6 +728,114 @@ export class MailboxDO extends DurableObject<Env> {
 			.run();
 
 		return true;
+	}
+
+	// ── Labels ─────────────────────────────────────────────────────
+
+	async listLabels(): Promise<Label[]> {
+		return [...this.ctx.storage.sql.exec(`SELECT id, name, color FROM labels ORDER BY name COLLATE NOCASE`)] as unknown as Label[];
+	}
+
+	async createLabel(name: string, color?: string): Promise<Label | null> {
+		const exists = [...this.ctx.storage.sql.exec(`SELECT 1 FROM labels WHERE name = ?1 COLLATE NOCASE`, name)].length > 0;
+		if (exists) return null;
+		const label = { id: crypto.randomUUID(), name, color: color ?? "#6b7280" };
+		this.ctx.storage.sql.exec(`INSERT INTO labels (id, name, color) VALUES (?1, ?2, ?3)`, label.id, label.name, label.color);
+		return label;
+	}
+
+	async updateLabel(id: string, patch: { name?: string; color?: string }): Promise<Label | "conflict" | null> {
+		const current = [...this.ctx.storage.sql.exec(`SELECT id, name, color FROM labels WHERE id = ?1`, id)][0] as unknown as Label | undefined;
+		if (!current) return null;
+		const next = { ...current, ...(patch.name ? { name: patch.name } : {}), ...(patch.color ? { color: patch.color } : {}) };
+		if (next.name.toLowerCase() !== current.name.toLowerCase()) {
+			const clash = [...this.ctx.storage.sql.exec(`SELECT 1 FROM labels WHERE name = ?1 COLLATE NOCASE AND id != ?2`, next.name, id)].length > 0;
+			if (clash) return "conflict";
+		}
+		this.ctx.storage.sql.exec(`UPDATE labels SET name = ?1, color = ?2 WHERE id = ?3`, next.name, next.color, id);
+		return next;
+	}
+
+	async deleteLabel(id: string): Promise<boolean> {
+		const exists = [...this.ctx.storage.sql.exec(`SELECT 1 FROM labels WHERE id = ?1`, id)].length > 0;
+		if (!exists) return false;
+		this.ctx.storage.sql.exec(`DELETE FROM email_labels WHERE label_id = ?1`, id);
+		this.ctx.storage.sql.exec(`DELETE FROM labels WHERE id = ?1`, id);
+		return true;
+	}
+
+	async getEmailLabels(emailId: string): Promise<Label[]> {
+		return [...this.ctx.storage.sql.exec(
+			`SELECT l.id, l.name, l.color FROM labels l JOIN email_labels el ON el.label_id = l.id WHERE el.email_id = ?1 ORDER BY l.name COLLATE NOCASE`,
+			emailId,
+		)] as unknown as Label[];
+	}
+
+	/** Returns false when the email or label does not exist. */
+	async addEmailLabel(emailId: string, labelId: string): Promise<boolean> {
+		const ok =
+			[...this.ctx.storage.sql.exec(`SELECT 1 FROM emails WHERE id = ?1`, emailId)].length > 0 &&
+			[...this.ctx.storage.sql.exec(`SELECT 1 FROM labels WHERE id = ?1`, labelId)].length > 0;
+		if (!ok) return false;
+		this.ctx.storage.sql.exec(`INSERT OR IGNORE INTO email_labels (email_id, label_id) VALUES (?1, ?2)`, emailId, labelId);
+		return true;
+	}
+
+	async removeEmailLabel(emailId: string, labelId: string): Promise<void> {
+		this.ctx.storage.sql.exec(`DELETE FROM email_labels WHERE email_id = ?1 AND label_id = ?2`, emailId, labelId);
+	}
+
+	// ── Filter rules ───────────────────────────────────────────────
+
+	async listFilterRules(): Promise<FilterRule[]> {
+		return [...this.ctx.storage.sql.exec(`SELECT id, name, enabled, conditions, actions, position FROM filter_rules ORDER BY position, rowid`)].map(
+			(r) => rowToRule(r as Record<string, unknown>),
+		);
+	}
+
+	async createFilterRule(rule: Omit<FilterRule, "id" | "position">): Promise<FilterRule> {
+		const row = [...this.ctx.storage.sql.exec(`SELECT COALESCE(MAX(position), -1) + 1 AS pos FROM filter_rules`)][0] as { pos: number };
+		const created: FilterRule = { ...rule, id: crypto.randomUUID(), position: row.pos };
+		this.ctx.storage.sql.exec(
+			`INSERT INTO filter_rules (id, name, enabled, conditions, actions, position) VALUES (?1, ?2, ?3, ?4, ?5, ?6)`,
+			created.id, created.name, created.enabled ? 1 : 0, JSON.stringify(created.conditions), JSON.stringify(created.actions), created.position,
+		);
+		return created;
+	}
+
+	async updateFilterRule(id: string, rule: Omit<FilterRule, "id" | "position">): Promise<FilterRule | null> {
+		const existing = [...this.ctx.storage.sql.exec(`SELECT position FROM filter_rules WHERE id = ?1`, id)][0] as { position: number } | undefined;
+		if (!existing) return null;
+		this.ctx.storage.sql.exec(
+			`UPDATE filter_rules SET name = ?1, enabled = ?2, conditions = ?3, actions = ?4 WHERE id = ?5`,
+			rule.name, rule.enabled ? 1 : 0, JSON.stringify(rule.conditions), JSON.stringify(rule.actions), id,
+		);
+		return { ...rule, id, position: existing.position };
+	}
+
+	async deleteFilterRule(id: string): Promise<boolean> {
+		const exists = [...this.ctx.storage.sql.exec(`SELECT 1 FROM filter_rules WHERE id = ?1`, id)].length > 0;
+		if (exists) this.ctx.storage.sql.exec(`DELETE FROM filter_rules WHERE id = ?1`, id);
+		return exists;
+	}
+
+	/** Run enabled filter rules against a freshly stored email. */
+	async applyFilters(emailId: string): Promise<{ applied: boolean; movedTo?: string }> {
+		const email = this.db.select().from(schema.emails).where(eq(schema.emails.id, emailId)).get();
+		if (!email) return { applied: false };
+		const { labelIds, moveTo, markRead, star } = collectActions(await this.listFilterRules(), {
+			sender: email.sender ?? "",
+			recipient: email.recipient ?? "",
+			cc: email.cc,
+			subject: email.subject ?? "",
+			body: email.body,
+		});
+		if (labelIds.length === 0 && !moveTo && !markRead && !star) return { applied: false };
+		for (const labelId of labelIds) await this.addEmailLabel(emailId, labelId);
+		// A rule may reference a folder deleted since; moveEmail returns false for unknown ids.
+		const moved = moveTo ? await this.moveEmail(emailId, moveTo) : false;
+		if (markRead || star) await this.updateEmail(emailId, { read: markRead ? true : undefined, starred: star ? true : undefined });
+		return { applied: true, ...(moved ? { movedTo: moveTo } : {}) };
 	}
 
 	// ── Search (raw SQL — dynamic condition builder) ───────────────
