@@ -4,6 +4,7 @@
 import { Hono, type MiddlewareHandler } from "hono";
 import { z } from "zod";
 import { isAdmin } from "../lib/auth";
+import { summarizeSetCookie } from "../lib/cookies";
 import type { Env } from "../types";
 import { countUsers, createAuth, createUserWithPassword, getAuthMode, MIN_PASSWORD_LENGTH } from "./index";
 
@@ -35,7 +36,14 @@ const onlyInPasswordMode: MiddlewareHandler<{ Bindings: Env }> = async (c, next)
 authApp.use("/api/auth/*", onlyInPasswordMode);
 authApp.use("/api/setup", onlyInPasswordMode);
 
-authApp.on(["GET", "POST"], "/api/auth/*", (c) => createAuth(c.env, c.req.raw).handler(c.req.raw));
+authApp.on(["GET", "POST"], "/api/auth/*", async (c) => {
+	const res = await createAuth(c.env, c.req.raw).handler(c.req.raw);
+	if (c.req.path.endsWith("/sign-in/email")) {
+		// Cookie names and attributes only: shows whether a session cookie was issued and how.
+		console.log("auth: sign-in response", { status: res.status, setCookie: res.headers.getSetCookie().map(summarizeSetCookie) });
+	}
+	return res;
+});
 
 /**
  * One-time creation of the first admin. Requires the SETUP_TOKEN secret, an
