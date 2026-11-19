@@ -80,7 +80,7 @@ export function createAuth(env: Env, request?: Request) {
 			},
 		},
 		advanced: {
-			// Own cookie names. Another Better Auth app on the same parent domain (e.g. api.sportix.vn)
+			// Own cookie names. Another Better Auth app on the same parent domain (e.g. api.example.com)
 			// may set a "better-auth.session_token" cookie for the whole domain; the browser would send
 			// both and the first one wins, which made every login look invalid.
 			cookiePrefix: COOKIE_PREFIX,

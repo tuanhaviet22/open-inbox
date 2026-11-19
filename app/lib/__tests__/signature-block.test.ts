@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { SignatureBlock } from "../signature-block";
 
 const TABLE =
-	'<table cellpadding="0" style="font-family:Arial"><tbody><tr><td style="padding:0"><a href="https://sportix.vn" target="_blank"><img src="https://sportix.vn/logo.svg" width="130"></a></td></tr><tr><td><strong>Tuấn Hà</strong></td></tr></tbody></table>';
+	'<table cellpadding="0" style="font-family:Arial"><tbody><tr><td style="padding:0"><a href="https://example.com" target="_blank"><img src="https://example.com/logo.svg" width="130"></a></td></tr><tr><td><strong>Tuấn Hà</strong></td></tr></tbody></table>';
 
 const makeEditor = (content: string) =>
 	new Editor({ extensions: [StarterKit, SignatureBlock], content });
@@ -16,7 +16,7 @@ describe("SignatureBlock", () => {
 		const html = editor.getHTML();
 		expect(html).toContain("<table");
 		expect(html).toContain('style="font-family:Arial"');
-		expect(html).toContain('src="https://sportix.vn/logo.svg"');
+		expect(html).toContain('src="https://example.com/logo.svg"');
 		expect(html).toContain("Tuấn Hà");
 		editor.destroy();
 	});
