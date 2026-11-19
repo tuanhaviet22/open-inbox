@@ -59,6 +59,35 @@ describe("authGuard in password mode", () => {
 		expect(getSession).not.toHaveBeenCalled();
 	});
 
+	describe("login page when already signed in", () => {
+		const cookie = "__Secure-open-inbox.session_token=tok.sig";
+
+		it("redirects to the home page with a valid session", async () => {
+			getSession.mockResolvedValue({ user: { id: "u1", email: "me@example.com" } });
+			const res = await call(makeApp(), "/login", { headers: { cookie, accept: "text/html" } });
+			expect(res.status).toBe(302);
+			expect(res.headers.get("location")).toBe("/");
+		});
+
+		it("shows the form when the cookie is not a valid session", async () => {
+			getSession.mockResolvedValue(null);
+			const res = await call(makeApp(), "/login", { headers: { cookie } });
+			expect(res.status).toBe(200);
+		});
+
+		it("does not look anything up when there is no session cookie", async () => {
+			const res = await call(makeApp(), "/login", { headers: { cookie: "_ga=1" } });
+			expect(res.status).toBe(200);
+			expect(getSession).not.toHaveBeenCalled();
+		});
+
+		it("shows the form if the lookup itself fails", async () => {
+			getSession.mockRejectedValue(new Error("db down"));
+			const res = await call(makeApp(), "/login", { headers: { cookie } });
+			expect(res.status).toBe(200);
+		});
+	});
+
 	it("only the login page GET is public, not other methods", async () => {
 		expect((await call(makeApp(), "/login", { method: "DELETE" })).status).toBe(401);
 	});
