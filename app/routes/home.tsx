@@ -25,6 +25,7 @@ import {
 } from "~/queries/mailboxes";
 import { queryKeys } from "~/queries/keys";
 import { useMe } from "~/queries/members";
+import BrandLogo from "~/components/BrandLogo";
 import UserMenu from "~/components/UserMenu";
 
 export function meta() {
@@ -151,7 +152,8 @@ export default function HomeRoute() {
 	return (
 		<div className="min-h-screen bg-kumo-recessed">
 			<div className="mx-auto max-w-2xl px-4 py-8 md:px-6 md:py-16">
-				<div className="mb-6 flex justify-end">
+				<div className="mb-6 flex items-center justify-between gap-4">
+					<BrandLogo />
 					<UserMenu />
 				</div>
 				<div className="mb-8">
