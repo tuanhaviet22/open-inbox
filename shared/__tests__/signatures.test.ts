@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getDefaultSignature, listSignatures, type Signature, validateSignatures } from "../signatures";
+import { getDefaultSignature, isComplexHtml, listSignatures, looksLikeHtmlSource, type Signature, validateSignatures } from "../signatures";
 
 const sig = (id: string, name = id): Signature => ({ id, name, text: `text ${id}` });
 
@@ -52,5 +52,30 @@ describe("validateSignatures", () => {
 		expect(validateSignatures({ signatures: [sig("a")], defaultSignatureId: "x" })).toMatch(/Default/);
 		const many = Array.from({ length: 21 }, (_, i) => sig(`s${i}`));
 		expect(validateSignatures({ signatures: many })).toMatch(/At most/);
+	});
+});
+
+describe("looksLikeHtmlSource", () => {
+	it("detects markup that was pasted as text", () => {
+		expect(looksLikeHtmlSource('<table style="x"><tr><td>Hi</td></tr></table>')).toBe(true);
+		expect(looksLikeHtmlSource('\n  <div>Hi</div>')).toBe(true);
+	});
+
+	it("does not flag ordinary text", () => {
+		expect(looksLikeHtmlSource("Best regards,\nTuan")).toBe(false);
+		expect(looksLikeHtmlSource("a < b and c > d")).toBe(false);
+		expect(looksLikeHtmlSource("<3 you")).toBe(false);
+	});
+});
+
+describe("isComplexHtml", () => {
+	it("flags tables, images and inline styles", () => {
+		expect(isComplexHtml("<table><tr><td>x</td></tr></table>")).toBe(true);
+		expect(isComplexHtml('<img src="a.png">')).toBe(true);
+		expect(isComplexHtml('<p style="color:red">x</p>')).toBe(true);
+	});
+
+	it("accepts simple formatting", () => {
+		expect(isComplexHtml("<p><strong>Tuan</strong> <a href='x'>site</a></p>")).toBe(false);
 	});
 });

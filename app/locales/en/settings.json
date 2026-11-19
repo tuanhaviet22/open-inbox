@@ -126,6 +126,15 @@
       "nameRequired": "Give the signature a name.",
       "nameTaken": "Another signature already uses this name.",
       "contentRequired": "The signature is empty."
-    }
+    },
+    "mode": "Editor mode",
+    "modes": {
+      "visual": "Visual",
+      "html": "HTML"
+    },
+    "htmlPlaceholder": "Paste the HTML of your signature here",
+    "preview": "Preview",
+    "confirmVisual": "The visual editor removes tables, images and custom styles. Switch anyway?",
+    "looksLikeSource": "This looks like HTML code stored as plain text. Click Edit to fix it."
   }
 }

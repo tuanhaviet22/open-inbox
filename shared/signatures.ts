@@ -56,3 +56,16 @@ export function validateSignatures(settings: Pick<SignatureSettings, "signatures
 	if (settings.defaultSignatureId && !ids.has(settings.defaultSignatureId)) return "Default signature does not exist";
 	return null;
 }
+
+/**
+ * True when plain text is really HTML source, e.g. someone pasted the markup of
+ * an email signature into a visual editor and it was stored as escaped text.
+ */
+export function looksLikeHtmlSource(text: string): boolean {
+	return /^\s*<([a-z][a-z0-9]*)(\s[^>]*)?>/i.test(text) && /<\/[a-z][a-z0-9]*\s*>/i.test(text);
+}
+
+/** HTML a visual editor would mangle: tables, images, or inline styles. */
+export function isComplexHtml(html: string): boolean {
+	return /<(table|img|td|tr)\b|\sstyle\s*=/i.test(html);
+}

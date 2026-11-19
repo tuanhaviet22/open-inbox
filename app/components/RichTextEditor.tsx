@@ -29,7 +29,8 @@ import StarterKit from "@tiptap/starter-kit";
 import { useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { Signature } from "shared/signatures";
-import { signatureToBlock } from "~/lib/utils";
+import { SignatureBlock } from "~/lib/signature-block";
+import { signatureInnerHtml } from "~/lib/utils";
 
 interface RichTextEditorProps {
 	value: string;
@@ -47,6 +48,7 @@ export default function RichTextEditor({
 	const editor = useEditor({
 		extensions: [
 			StarterKit,
+			SignatureBlock,
 			Underline,
 			TextAlign.configure({ types: ["heading", "paragraph"] }),
 			LinkExtension.configure({ openOnClick: false }),
@@ -232,7 +234,7 @@ export default function RichTextEditor({
 							value=""
 							onChange={(e) => {
 								const sig = signatures.find((s) => s.id === e.target.value);
-								if (sig) editor.chain().focus().insertContent(signatureToBlock(sig)).run();
+								if (sig) editor.chain().focus().insertContent({ type: "signatureBlock", attrs: { html: signatureInnerHtml(sig) } }).run();
 							}}
 							className="rounded-md border border-kumo-line bg-kumo-base px-2 py-1 text-xs text-kumo-default focus:outline-none focus:ring-1 focus:ring-kumo-ring"
 						>
