@@ -11,6 +11,7 @@ import { createAuth, getAuthMode } from "../auth";
 import { verifyApiKey } from "../auth/api-keys";
 import type { Env } from "../types";
 import { isAuthzEnabled } from "./auth";
+import { cookieNames, hasSessionCookie, normalizeCookieHeader } from "./cookies";
 
 export interface Identity {
 	/** Lowercased; empty for Access service tokens, which carry no email. */
@@ -72,8 +73,22 @@ async function resolvePasswordIdentity(env: Env, request: Request, allowApiKey: 
 		}
 	}
 
-	const session = await createAuth(env, request).api.getSession({ headers: request.headers });
-	if (!session) return { status: 401, message: "Authentication required" };
+	const headers = new Headers(request.headers);
+	const cookie = normalizeCookieHeader(headers.get("cookie"));
+	if (cookie) headers.set("cookie", cookie);
+
+	const session = await createAuth(env, request).api.getSession({ headers });
+	if (!session) {
+		// Names only, never values: tells "cookie never arrived" apart from "cookie arrived but is not valid".
+		const names = cookieNames(cookie);
+		console.warn("auth: no valid session", {
+			path: new URL(request.url).pathname,
+			method: request.method,
+			cookieCount: names.length,
+			hasSessionCookie: hasSessionCookie(names),
+		});
+		return { status: 401, message: "Authentication required" };
+	}
 	return { identity: { email: session.user.email.toLowerCase(), userId: session.user.id, method: "session" } };
 }
 
