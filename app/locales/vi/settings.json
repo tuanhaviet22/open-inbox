@@ -126,6 +126,15 @@
       "nameRequired": "Hãy đặt tên cho chữ ký.",
       "nameTaken": "Đã có chữ ký khác dùng tên này.",
       "contentRequired": "Chữ ký đang trống."
-    }
+    },
+    "mode": "Chế độ soạn",
+    "modes": {
+      "visual": "Trực quan",
+      "html": "HTML"
+    },
+    "htmlPlaceholder": "Dán mã HTML của chữ ký vào đây",
+    "preview": "Xem trước",
+    "confirmVisual": "Trình soạn trực quan sẽ xóa bảng, hình ảnh và định dạng riêng. Vẫn chuyển?",
+    "looksLikeSource": "Chữ ký này giống mã HTML bị lưu thành văn bản thường. Bấm Sửa để khắc phục."
   }
 }

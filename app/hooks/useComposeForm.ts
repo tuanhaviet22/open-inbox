@@ -261,15 +261,16 @@ export function useComposeForm(mailboxId?: string, _folder?: string) {
 			text: htmlToPlainText(body),
 		};
 		const draftId = composeOptions.draftEmail?.id; const mode = composeOptions.mode; const originalId = composeOptions.originalEmail?.id || composeOptions.draftEmail?.in_reply_to;
-		setIsSending(true); toastManager.add({ title: t("toasts.sending") });
+		setIsSending(true); const sendingToast = toastManager.add({ title: t("toasts.sending") });
 		try {
 			if ((mode === "reply" || mode === "reply-all") && originalId) await replyMutation.mutateAsync({ mailboxId, emailId: originalId, email: emailData });
 			else if (mode === "forward" && originalId) await forwardMutation.mutateAsync({ mailboxId, emailId: originalId, email: emailData });
 			else await sendEmailMutation.mutateAsync({ mailboxId, email: emailData });
 			if (draftId) deleteEmailMutation.mutate({ mailboxId, id: draftId });
+			toastManager.close(sendingToast);
 			toastManager.add({ title: t("toasts.sent") });
 			onClose();
-		} catch (err: unknown) { const message = (err instanceof Error ? err.message : null) || t("errors.sendFailed"); setError(message); toastManager.add({ title: message, variant: "error" }); }
+		} catch (err: unknown) { const message = (err instanceof Error ? err.message : null) || t("errors.sendFailed"); setError(message); toastManager.close(sendingToast); toastManager.add({ title: message, variant: "error" }); }
 		finally { setIsSending(false); }
 	};
 

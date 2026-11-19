@@ -131,12 +131,18 @@ export function escapeHtml(text: string): string {
 		.replace(/'/g, "&#39;");
 }
 
-/** HTML block for one signature. HTML is sanitized; plain text is escaped. */
-export function signatureToBlock(sig: Signature): string {
+/** Sanitized inner HTML of a signature: tables, inline styles and images are kept. */
+export function signatureInnerHtml(sig: Signature): string {
 	if (!sig.html && !sig.text) return "";
-	// DOMPurify keeps safe formatting (bold, links, ...) and strips scripts and event handlers.
-	const content = sig.html ? DOMPurify.sanitize(sig.html) : escapeHtml(sig.text).replace(/\n/g, "<br>");
-	return `<div style="border-top: 1px solid #ccc; margin-top: 16px; padding-top: 12px;">${content}</div>`;
+	// DOMPurify drops scripts and event handlers; `target` is allowed so links can open in a new tab.
+	return sig.html ? DOMPurify.sanitize(sig.html, { ADD_ATTR: ["target"] }) : escapeHtml(sig.text).replace(/\n/g, "<br>");
+}
+
+/** HTML block for one signature, in the shape the editor's SignatureBlock node parses. */
+export function signatureToBlock(sig: Signature): string {
+	const inner = signatureInnerHtml(sig);
+	if (!inner) return "";
+	return `<div data-signature="1" style="border-top: 1px solid #ccc; margin-top: 16px; padding-top: 12px;">${inner}</div>`;
 }
 
 /** Block for the mailbox's default signature, added to new messages, replies and forwards. */
