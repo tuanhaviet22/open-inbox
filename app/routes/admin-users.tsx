@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { useCreateUser, useDeleteUser, useSetUserPassword, useUsers } from "~/queries/admin";
 import { useMe } from "~/queries/members";
+import UserMenu from "~/components/UserMenu";
 
 export default function AdminUsersRoute() {
 	const { t } = useTranslation("auth");
@@ -48,7 +49,7 @@ export default function AdminUsersRoute() {
 		<div className="max-w-2xl px-4 py-4 md:px-8 md:py-6 space-y-6">
 			<div className="flex items-center justify-between">
 				<h1 className="text-lg font-semibold text-kumo-default">{t("admin.title")}</h1>
-				<Link to="/account" className="text-sm underline">{t("account.title")}</Link>
+				<UserMenu />
 			</div>
 			<ul className="space-y-2 rounded-lg border border-kumo-line bg-kumo-base p-5">
 				{users.map((u) => (

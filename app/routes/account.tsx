@@ -8,6 +8,7 @@ import { Link } from "react-router";
 import { authClient } from "~/lib/auth-client";
 import { useApiKeys, useCreateApiKey, useDeleteApiKey } from "~/queries/admin";
 import { useMe } from "~/queries/members";
+import UserMenu from "~/components/UserMenu";
 
 const MIN_LENGTH = 10;
 
@@ -128,8 +129,9 @@ export default function AccountRoute() {
 		<div className="max-w-2xl px-4 py-4 md:px-8 md:py-6 space-y-6">
 			<div className="flex items-center justify-between">
 				<h1 className="text-lg font-semibold text-kumo-default">{t("account.title")}</h1>
-				<Link to="/" className="text-sm underline">{t("account.back")}</Link>
+				<UserMenu showAccountLink={false} />
 			</div>
+			<Link to="/" className="inline-block text-sm underline">{t("account.back")}</Link>
 			<p className="text-sm text-kumo-subtle">{t("account.signedInAs", { email: me.email })}</p>
 			{password ? (
 				<>
