@@ -50,7 +50,8 @@
     "empty": {
       "title": "No mailboxes yet",
       "configured": "Your email routing is configured but no mailboxes have been created yet. They will appear here automatically.",
-      "unconfigured": "Create a mailbox to start sending and receiving emails with your domain."
+      "unconfigured": "Create a mailbox to start sending and receiving emails with your domain.",
+      "noAccess": "You are not a member of any mailbox yet. Ask an administrator to add you to one."
     },
     "createDialog": {
       "title": "Create New Mailbox",

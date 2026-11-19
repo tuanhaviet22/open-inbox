@@ -4,6 +4,7 @@
 import type { MiddlewareHandler } from "hono";
 import { getAuthMode, getBaseUrl } from "../auth";
 import type { Env } from "../types";
+import { cookieNames, hasSessionCookie } from "./cookies";
 import { type Identity, resolveIdentity } from "./identity";
 
 export type GuardEnv = {
@@ -48,6 +49,14 @@ export function authGuard(opts: { dev: boolean }): MiddlewareHandler<GuardEnv> {
 		const password = getAuthMode(c.env) === "password";
 
 		if (password) {
+			// Already signed in? Skip the login form. Only worth a lookup when a session cookie is present.
+			if (path === "/login" && (c.req.method === "GET" || c.req.method === "HEAD")) {
+				if (hasSessionCookie(cookieNames(c.req.header("cookie") ?? null))) {
+					const current = await resolveIdentity(c.env, c.req.raw, { dev: opts.dev, allowApiKey: false }).catch(() => null);
+					if (current && "identity" in current) return c.redirect("/");
+				}
+				return next();
+			}
 			if (isPublicInPasswordMode(c.req.method, path)) return next();
 			const authHeader = c.req.header("authorization") ?? c.req.header("x-api-key");
 			if (!(isMcp(path) && authHeader) && isCrossSiteWrite(c.req.raw, getBaseUrl(c.env, c.req.raw))) {
