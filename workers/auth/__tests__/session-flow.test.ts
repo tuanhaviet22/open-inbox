@@ -50,7 +50,7 @@ describe("browser session flow", () => {
 		const { res } = await signedInCookie(makeApp(), env);
 		expect(res.status).toBe(200);
 		const setCookie = res.headers.getSetCookie().join("\n");
-		expect(setCookie).toMatch(/__Secure-better-auth\.session_token=/);
+		expect(setCookie).toMatch(/__Secure-open-inbox\.session_token=/);
 		expect(setCookie).toMatch(/Secure/i);
 		expect(setCookie).toMatch(/HttpOnly/i);
 		expect(setCookie).toMatch(/Path=\//i);
@@ -105,5 +105,29 @@ describe("HTTP/2 split cookie headers", () => {
 		for (const extra of ["_ga=GA1.1.123", "_bs=abc"]) headers.append("cookie", extra);
 		const res = await app.request("https://mailbox.sportix.vn/api/v1/me", { headers }, env);
 		expect(res.status).toBe(200);
+	});
+});
+
+describe("cookies set by another app on the same parent domain", () => {
+	it("ignores a foreign better-auth session cookie that arrives first", async () => {
+		const env = makeEnv();
+		const app = makeApp();
+		const { cookie } = await signedInCookie(app, env);
+		// e.g. api.sportix.vn sets this for .sportix.vn; the browser sends it before ours.
+		const headers = new Headers({ accept: "text/html" });
+		headers.append("cookie", "__Secure-better-auth.session_token=foreign-token.foreign-signature");
+		for (const pair of cookie.split("; ")) headers.append("cookie", pair);
+		const res = await app.request("https://mailbox.sportix.vn/api/v1/me", { headers }, env);
+		expect(res.status).toBe(200);
+		expect(await res.json()).toMatchObject({ email: "contact@sportix.vn" });
+	});
+
+	it("does not accept a foreign cookie on its own", async () => {
+		const res = await makeApp().request(
+			"https://mailbox.sportix.vn/api/v1/me",
+			{ headers: { cookie: "__Secure-better-auth.session_token=foreign-token.foreign-signature" } },
+			makeEnv(),
+		);
+		expect(res.status).toBe(401);
 	});
 });

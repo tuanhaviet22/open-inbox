@@ -20,7 +20,8 @@ export function cookieNames(value: string | null): string[] {
 		.filter(Boolean);
 }
 
-export const SESSION_COOKIE_SUFFIX = "better-auth.session_token";
+/** Better Auth names it `<prefix>.session_token`, with `__Secure-` in front over HTTPS. */
+export const SESSION_COOKIE_SUFFIX = ".session_token";
 
 export function hasSessionCookie(names: string[]): boolean {
 	return names.some((n) => n.endsWith(SESSION_COOKIE_SUFFIX));

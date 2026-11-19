@@ -23,6 +23,7 @@ describe("cookieNames / hasSessionCookie", () => {
 		const names = cookieNames("_ga=secret; __Secure-better-auth.session_token=tok.sig");
 		expect(names).toEqual(["_ga", "__Secure-better-auth.session_token"]);
 		expect(hasSessionCookie(names)).toBe(true);
+		expect(hasSessionCookie(["__Secure-open-inbox.session_token"])).toBe(true);
 		expect(hasSessionCookie(["_ga"])).toBe(false);
 	});
 

@@ -13,6 +13,8 @@ import type { Env } from "../types";
 
 export type AuthMode = "access" | "password";
 
+export const COOKIE_PREFIX = "open-inbox";
+
 /** Anything but an explicit "password" keeps the Cloudflare Access behavior. */
 export function getAuthMode(env: { AUTH_MODE?: string }): AuthMode {
 	return env.AUTH_MODE === "password" ? "password" : "access";
@@ -78,6 +80,10 @@ export function createAuth(env: Env, request?: Request) {
 			},
 		},
 		advanced: {
+			// Own cookie names. Another Better Auth app on the same parent domain (e.g. api.sportix.vn)
+			// may set a "better-auth.session_token" cookie for the whole domain; the browser would send
+			// both and the first one wins, which made every login look invalid.
+			cookiePrefix: COOKIE_PREFIX,
 			// Workers do not set X-Forwarded-For; without this every client shares one bucket.
 			ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
 			useSecureCookies: baseURL.startsWith("https://"),
