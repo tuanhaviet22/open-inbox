@@ -24,6 +24,7 @@ import {
 	useMailboxes,
 } from "~/queries/mailboxes";
 import { queryKeys } from "~/queries/keys";
+import { useMe } from "~/queries/members";
 
 export function meta() {
 	return [{ title: "Open Inbox" }];
@@ -33,6 +34,7 @@ export default function HomeRoute() {
 	const { t } = useTranslation("settings");
 	const toastManager = useKumoToastManager();
 	const { data: mailboxes = [], refetch: refetchMailboxes, isFetched: mailboxesFetched } = useMailboxes();
+	const { data: me } = useMe();
 	const createMailbox = useCreateMailbox();
 	const deleteMailbox = useDeleteMailbox();
 
@@ -140,6 +142,10 @@ export default function HomeRoute() {
 		: mailboxes;
 
 	const isLoading = !configData;
+	// With per-mailbox authorization on, only admins create or delete mailboxes; everyone else
+	// sees just the ones they were added to.
+	const memberOnly = !!me?.authzEnabled && !me.isAdmin;
+	const canManage = !isConfigured && !memberOnly;
 
 	return (
 		<div className="min-h-screen bg-kumo-recessed">
@@ -147,7 +153,7 @@ export default function HomeRoute() {
 				<div className="mb-8">
 					<div className="flex items-center justify-between">
 						<h1 className="text-2xl font-bold text-kumo-default">{t("home.title")}</h1>
-						{!isConfigured && (
+						{canManage && (
 							<Button
 								variant="primary"
 								icon={<PlusIcon size={16} />}
@@ -189,7 +195,7 @@ export default function HomeRoute() {
 										{account.email}
 									</div>
 								</div>
-								{!isConfigured && (
+								{canManage && (
 									<Button
 										variant="ghost"
 										size="sm"
@@ -224,11 +230,13 @@ export default function HomeRoute() {
 								{t("home.empty.title")}
 							</h3>
 							<p className="text-sm text-kumo-subtle max-w-sm mb-5">
-								{isConfigured
-									? t("home.empty.configured")
-									: t("home.empty.unconfigured")}
+								{memberOnly
+									? t("home.empty.noAccess")
+									: isConfigured
+										? t("home.empty.configured")
+										: t("home.empty.unconfigured")}
 							</p>
-							{!isConfigured && (
+							{canManage && (
 								<Button
 									variant="primary"
 									icon={<PlusIcon size={16} />}

@@ -50,7 +50,8 @@
     "empty": {
       "title": "Chưa có hộp thư nào",
       "configured": "Định tuyến email đã được cấu hình nhưng chưa có hộp thư nào được tạo. Chúng sẽ tự động xuất hiện tại đây.",
-      "unconfigured": "Tạo một hộp thư để bắt đầu gửi và nhận email với tên miền của bạn."
+      "unconfigured": "Tạo một hộp thư để bắt đầu gửi và nhận email với tên miền của bạn.",
+      "noAccess": "Bạn chưa là thành viên của hộp thư nào. Hãy nhờ quản trị viên thêm bạn vào một hộp thư."
     },
     "createDialog": {
       "title": "Tạo hộp thư mới",
