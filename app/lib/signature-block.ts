@@ -2,6 +2,7 @@
 //     https://opensource.org/licenses/Apache-2.0
 
 import { Node } from "@tiptap/react";
+import DOMPurify from "dompurify";
 
 /**
  * A signature is stored in the message body as one opaque block. TipTap's
@@ -10,6 +11,14 @@ import { Node } from "@tiptap/react";
  * sanitized by `signatureToBlock` before it gets here).
  */
 export const SIGNATURE_ATTR = "data-signature";
+
+/**
+ * Everything that enters or leaves the block goes through DOMPurify. The HTML can come from a
+ * stored draft that someone else (a mailbox member, an MCP client) wrote, and the node view
+ * assigns it with innerHTML, so a handler such as `<img onerror=...>` would otherwise run in
+ * the reader's session.
+ */
+const clean = (html: unknown) => DOMPurify.sanitize(typeof html === "string" ? html : "", { ADD_ATTR: ["target"] });
 
 export const SignatureBlock = Node.create({
 	name: "signatureBlock",
@@ -27,7 +36,7 @@ export const SignatureBlock = Node.create({
 			{
 				tag: `div[${SIGNATURE_ATTR}]`,
 				priority: 100,
-				getAttrs: (el) => ({ html: (el as HTMLElement).innerHTML }),
+				getAttrs: (el) => ({ html: clean((el as HTMLElement).innerHTML) }),
 			},
 		];
 	},
@@ -36,7 +45,7 @@ export const SignatureBlock = Node.create({
 		const el = document.createElement("div");
 		el.setAttribute(SIGNATURE_ATTR, "1");
 		el.setAttribute("style", "border-top: 1px solid #ccc; margin-top: 16px; padding-top: 12px;");
-		el.innerHTML = node.attrs.html as string;
+		el.innerHTML = clean(node.attrs.html);
 		return el as unknown as ["div"];
 	},
 
@@ -46,7 +55,7 @@ export const SignatureBlock = Node.create({
 			dom.setAttribute(SIGNATURE_ATTR, "1");
 			dom.setAttribute("contenteditable", "false");
 			dom.setAttribute("style", "border-top: 1px solid #ccc; margin-top: 16px; padding-top: 12px;");
-			dom.innerHTML = node.attrs.html as string;
+			dom.innerHTML = clean(node.attrs.html);
 			return { dom };
 		};
 	},

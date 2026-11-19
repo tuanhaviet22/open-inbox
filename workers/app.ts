@@ -10,6 +10,7 @@ import { EmailMCP } from "./mcp";
 import { authApp } from "./auth/routes";
 import { getMailboxRole, hasRole } from "./lib/auth";
 import { authGuard, type GuardEnv } from "./lib/guard";
+import { securityHeaders } from "./lib/security-headers";
 import { normalizeMailboxId } from "./lib/mailbox";
 import type { Env } from "./types";
 
@@ -34,6 +35,8 @@ const requestHandler = createRequestHandler(
 
 // Main app that wraps the API and adds React Router fallback
 const app = new Hono<GuardEnv>();
+
+app.use("*", securityHeaders());
 
 // Authentication: Cloudflare Access JWT or Better Auth session (see AUTH_MODE).
 // Per-mailbox authorization is enforced by requireMailbox (API), the
