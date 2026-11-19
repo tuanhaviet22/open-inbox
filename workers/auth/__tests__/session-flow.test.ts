@@ -13,9 +13,9 @@ import { fakeD1 } from "./fake-d1";
 function makeEnv() {
 	return {
 		AUTH_MODE: "password",
-		ADMIN_EMAILS: "contact@sportix.vn",
+		ADMIN_EMAILS: "admin@example.com",
 		BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret-1234",
-		BETTER_AUTH_URL: "https://mailbox.sportix.vn",
+		BETTER_AUTH_URL: "https://mail.example.com",
 		DB: fakeD1(),
 	} as unknown as Env;
 }
@@ -31,13 +31,13 @@ function makeApp() {
 const cookieHeader = (res: Response) => res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
 
 async function signedInCookie(app: ReturnType<typeof makeApp>, env: Env) {
-	await createUserWithPassword(createAuth(env), { email: "contact@sportix.vn", name: "Contact", password: "correct horse battery" });
+	await createUserWithPassword(createAuth(env), { email: "admin@example.com", name: "Contact", password: "correct horse battery" });
 	const res = await app.request(
-		"https://mailbox.sportix.vn/api/auth/sign-in/email",
+		"https://mail.example.com/api/auth/sign-in/email",
 		{
 			method: "POST",
-			headers: { "content-type": "application/json", origin: "https://mailbox.sportix.vn", "cf-connecting-ip": "203.0.113.5" },
-			body: JSON.stringify({ email: "contact@sportix.vn", password: "correct horse battery" }),
+			headers: { "content-type": "application/json", origin: "https://mail.example.com", "cf-connecting-ip": "203.0.113.5" },
+			body: JSON.stringify({ email: "admin@example.com", password: "correct horse battery" }),
 		},
 		env,
 	);
@@ -61,21 +61,21 @@ describe("browser session flow", () => {
 		const env = makeEnv();
 		const app = makeApp();
 		const { cookie } = await signedInCookie(app, env);
-		const res = await app.request("https://mailbox.sportix.vn/api/v1/me", { headers: { cookie } }, env);
+		const res = await app.request("https://mail.example.com/api/v1/me", { headers: { cookie } }, env);
 		expect(res.status).toBe(200);
-		expect(await res.json()).toMatchObject({ ok: true, email: "contact@sportix.vn", method: "session" });
+		expect(await res.json()).toMatchObject({ ok: true, email: "admin@example.com", method: "session" });
 	});
 
 	it("serves the home page instead of redirecting to /login", async () => {
 		const env = makeEnv();
 		const app = makeApp();
 		const { cookie } = await signedInCookie(app, env);
-		const res = await app.request("https://mailbox.sportix.vn/", { headers: { cookie, accept: "text/html" } }, env);
+		const res = await app.request("https://mail.example.com/", { headers: { cookie, accept: "text/html" } }, env);
 		expect(res.status).toBe(200);
 	});
 
 	it("still redirects to /login without the cookie", async () => {
-		const res = await makeApp().request("https://mailbox.sportix.vn/", { headers: { accept: "text/html" } }, makeEnv());
+		const res = await makeApp().request("https://mail.example.com/", { headers: { accept: "text/html" } }, makeEnv());
 		expect(res.status).toBe(302);
 	});
 });
@@ -93,7 +93,7 @@ describe("HTTP/2 split cookie headers", () => {
 		const app = makeApp();
 		const { cookie } = await signedInCookie(app, env);
 		const headers = withSplitCookies(cookie, ["_ga=GA1.1.123", "_gcl_au=1.1.456", "ph_phc_x_posthog=%7B%22a%22%3A1%7D"]);
-		const res = await app.request("https://mailbox.sportix.vn/api/v1/me", { headers }, env);
+		const res = await app.request("https://mail.example.com/api/v1/me", { headers }, env);
 		expect(res.status).toBe(200);
 	});
 
@@ -103,7 +103,7 @@ describe("HTTP/2 split cookie headers", () => {
 		const { cookie } = await signedInCookie(app, env);
 		const headers = withSplitCookies(cookie, []);
 		for (const extra of ["_ga=GA1.1.123", "_bs=abc"]) headers.append("cookie", extra);
-		const res = await app.request("https://mailbox.sportix.vn/api/v1/me", { headers }, env);
+		const res = await app.request("https://mail.example.com/api/v1/me", { headers }, env);
 		expect(res.status).toBe(200);
 	});
 });
@@ -113,18 +113,18 @@ describe("cookies set by another app on the same parent domain", () => {
 		const env = makeEnv();
 		const app = makeApp();
 		const { cookie } = await signedInCookie(app, env);
-		// e.g. api.sportix.vn sets this for .sportix.vn; the browser sends it before ours.
+		// e.g. a sibling app sets this for the whole parent domain; the browser sends it before ours.
 		const headers = new Headers({ accept: "text/html" });
 		headers.append("cookie", "__Secure-better-auth.session_token=foreign-token.foreign-signature");
 		for (const pair of cookie.split("; ")) headers.append("cookie", pair);
-		const res = await app.request("https://mailbox.sportix.vn/api/v1/me", { headers }, env);
+		const res = await app.request("https://mail.example.com/api/v1/me", { headers }, env);
 		expect(res.status).toBe(200);
-		expect(await res.json()).toMatchObject({ email: "contact@sportix.vn" });
+		expect(await res.json()).toMatchObject({ email: "admin@example.com" });
 	});
 
 	it("does not accept a foreign cookie on its own", async () => {
 		const res = await makeApp().request(
-			"https://mailbox.sportix.vn/api/v1/me",
+			"https://mail.example.com/api/v1/me",
 			{ headers: { cookie: "__Secure-better-auth.session_token=foreign-token.foreign-signature" } },
 			makeEnv(),
 		);
