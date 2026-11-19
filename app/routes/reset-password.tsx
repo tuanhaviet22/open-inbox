@@ -5,6 +5,7 @@ import { Button, Input } from "@cloudflare/kumo";
 import { type FormEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
+import BrandLogo from "~/components/BrandLogo";
 import { authClient } from "~/lib/auth-client";
 
 const MIN_LENGTH = 10;
@@ -34,6 +35,7 @@ export default function ResetPasswordRoute() {
 	return (
 		<div className="flex min-h-screen items-center justify-center p-4">
 			<form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 rounded-lg border border-kumo-line bg-kumo-base p-6">
+				<BrandLogo className="h-9 w-auto" />
 				<h1 className="text-lg font-semibold text-kumo-default">{t("reset.title")}</h1>
 				{!token ? (
 					<p role="alert" className="text-sm text-red-600">{t("reset.invalidToken")}</p>

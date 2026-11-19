@@ -4,6 +4,7 @@
 import { Button, Input } from "@cloudflare/kumo";
 import { type FormEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
+import BrandLogo from "~/components/BrandLogo";
 import LanguageSwitcher from "~/components/LanguageSwitcher";
 import { authClient } from "~/lib/auth-client";
 
@@ -49,6 +50,7 @@ export default function LoginRoute() {
 	return (
 		<div className="flex min-h-screen items-center justify-center p-4">
 			<form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 rounded-lg border border-kumo-line bg-kumo-base p-6">
+				<BrandLogo className="h-9 w-auto" />
 				<div className="flex items-center justify-between">
 					<h1 className="text-lg font-semibold text-kumo-default">{t("login.title")}</h1>
 					<LanguageSwitcher />
