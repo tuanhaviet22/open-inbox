@@ -327,6 +327,19 @@ app.post("/api/v1/mailboxes/:mailboxId/emails", async (c: AppContext) => {
 	const stub = c.var.mailboxStub;
 	const rateLimitError = await stub.checkSendRateLimit();
 	if (rateLimitError) return c.json({ error: rateLimitError }, 429);
+
+	// Deliver first: a failed send must not leave a message in Sent that nobody received.
+	try {
+		await getEmailProvider(c.env).send({
+			to, cc, bcc, from, subject, html, text,
+			attachments: attachments?.map((att) => ({ content: att.content, filename: att.filename, type: att.type, disposition: att.disposition || "attachment", contentId: att.contentId })),
+			...(in_reply_to ? { headers: buildThreadingHeaders(in_reply_to, references || []) } : {}),
+		});
+	} catch (e) {
+		console.error("Email delivery failed:", (e as Error).message);
+		return c.json({ error: "Email delivery failed" }, 502);
+	}
+
 	const attachmentData = await storeAttachments(c.env.BUCKET, messageId, attachments);
 
 	await stub.createEmail(Folders.SENT, {
@@ -345,15 +358,7 @@ app.post("/api/v1/mailboxes/:mailboxId/emails", async (c: AppContext) => {
 			{ key: "message-id", value: `<${outgoingMessageId}>` },
 		]),
 	}, attachmentData);
-
-	c.executionCtx.waitUntil(
-		getEmailProvider(c.env).send({
-			to, cc, bcc, from, subject, html, text,
-			attachments: attachments?.map((att) => ({ content: att.content, filename: att.filename, type: att.type, disposition: att.disposition || "attachment", contentId: att.contentId })),
-			...(in_reply_to ? { headers: buildThreadingHeaders(in_reply_to, references || []) } : {}),
-		}).catch((e) => console.error("Deferred email delivery failed:", (e as Error).message)),
-	);
-	return c.json({ id: messageId, status: "sent" }, 202);
+	return c.json({ id: messageId, status: "sent" }, 200);
 });
 
 app.post("/api/v1/mailboxes/:mailboxId/drafts", async (c: AppContext) => {
