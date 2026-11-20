@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
 	CreateMailboxBodySchema,
+	EMAIL_MAX_BYTES,
+	EMAIL_MAX_RECIPIENTS,
+	EMAIL_MAX_SUBJECT_LENGTH,
 	FolderNameBodySchema,
 	MailboxSettingsSchema,
 	MoveEmailBodySchema,
+	SendEmailRequestSchema,
 	UpdateMailboxBodySchema,
 	UpdateEmailBodySchema,
 } from "../schemas";
@@ -34,6 +38,35 @@ describe("request body schemas", () => {
 	it("trims folder names and rejects blank ones", () => {
 		expect(FolderNameBodySchema.parse({ name: "  Work " }).name).toBe("Work");
 		expect(FolderNameBodySchema.safeParse({ name: "   " }).success).toBe(false);
+	});
+
+	describe("send email limits", () => {
+		const base = { to: "a@example.com", from: "me@example.com", subject: "Hi", html: "<p>Hi</p>" };
+		const attachment = (content: string) => ({ content, filename: "f.pdf", type: "application/pdf", disposition: "attachment" as const });
+
+		it("accepts a normal message", () => {
+			expect(SendEmailRequestSchema.safeParse(base).success).toBe(true);
+		});
+
+		it("rejects a subject longer than the RFC limit", () => {
+			const subject = "a".repeat(EMAIL_MAX_SUBJECT_LENGTH + 1);
+			expect(SendEmailRequestSchema.safeParse({ ...base, subject }).success).toBe(false);
+		});
+
+		it("rejects more recipients than Cloudflare accepts across to, cc and bcc", () => {
+			const to = Array.from({ length: EMAIL_MAX_RECIPIENTS }, (_, i) => `u${i}@example.com`);
+			expect(SendEmailRequestSchema.safeParse({ ...base, to, cc: "one@example.com" }).success).toBe(false);
+		});
+
+		it("rejects a message over 5 MiB including attachments", () => {
+			// base64 of 5.25 MiB decoded payload
+			const content = "A".repeat(Math.ceil((EMAIL_MAX_BYTES * 4) / 3) + 4);
+			expect(SendEmailRequestSchema.safeParse({ ...base, attachments: [attachment(content)] }).success).toBe(false);
+		});
+
+		it("rejects a message whose text body alone is over the limit", () => {
+			expect(SendEmailRequestSchema.safeParse({ ...base, text: "a".repeat(EMAIL_MAX_BYTES + 1) }).success).toBe(false);
+		});
 	});
 
 	describe("signatures in mailbox settings", () => {
