@@ -55,3 +55,19 @@ export async function storeAttachments(
 	}
 	return results;
 }
+
+/**
+ * Delete the R2 objects of an email's attachments. Call this after the
+ * Durable Object row is gone; the DO only stores metadata.
+ */
+export async function deleteAttachmentObjects(
+	bucket: Env["BUCKET"],
+	emailId: string,
+	attachments: { id: string; filename: string }[],
+): Promise<void> {
+	const keys = attachments.map((att) => `attachments/${emailId}/${att.id}/${att.filename}`);
+	// R2 delete accepts at most 1000 keys per call.
+	for (let i = 0; i < keys.length; i += 1000) {
+		await bucket.delete(keys.slice(i, i + 1000));
+	}
+}

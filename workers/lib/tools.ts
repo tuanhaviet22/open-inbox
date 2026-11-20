@@ -27,6 +27,7 @@ import {
 	buildThreadingHeaders,
 } from "./email-helpers";
 import { verifyDraft } from "./ai";
+import { deleteAttachmentObjects } from "./attachments";
 import { getEmailProvider } from "../email-sender";
 import { Folders } from "../../shared/folders";
 import type { Env } from "../types";
@@ -312,7 +313,8 @@ export async function toolUpdateDraft(
 		return { error: "Draft verification failed — keeping existing draft unchanged. Please try again." };
 	}
 
-	await stub.deleteEmail(params.draftId);
+	const deletedDraft = await stub.deleteEmail(params.draftId);
+	if (deletedDraft) await deleteAttachmentObjects(env.BUCKET, params.draftId, deletedDraft);
 	await stub.createEmail(
 		Folders.DRAFT,
 		{
@@ -404,7 +406,8 @@ export async function toolDiscardDraft(
 	if (email.folder_id !== Folders.DRAFT) {
 		return { error: "Cannot discard: email is not a draft" };
 	}
-	await stub.deleteEmail(draftId);
+	const deleted = await stub.deleteEmail(draftId);
+	if (deleted) await deleteAttachmentObjects(env.BUCKET, draftId, deleted);
 	return { status: "discarded", draftId };
 }
 
@@ -420,6 +423,7 @@ export async function toolDeleteEmail(
 	if (result === null) {
 		return { error: "Email not found", emailId };
 	}
+	await deleteAttachmentObjects(env.BUCKET, emailId, result);
 	return { status: "deleted", emailId };
 }
 
